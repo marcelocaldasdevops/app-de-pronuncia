@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+
+# Production build
+dist/
+dist-ssr/
+
+# Environment files and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Editor & OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Testing / Playwright
+.playwright-mcp/
+test-results/
+playwright-report/
+
+# Mobile & Capacitor build noise
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/captures/
+ios/DerivedData/
+ios/App/build/
+ios/App/Pods/
+
+# Python & Backend
+backend/venv/
+backend/.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Flutter & Dart
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+
+# Keystores & Signing Keys
+**/*.jks
+**/*.keystore
+**/*.key
+**/*.p12
+**/*.pem
+
+# Temporary test captures
+app_*_live.png
+
+
+# Agents 
+.agent/*
+.agents/*
+.claude/*
+.gemini/*
+.opencode/*
+.playwright-mcp/*
+.cursor/*
+agent/*
+
+# venv

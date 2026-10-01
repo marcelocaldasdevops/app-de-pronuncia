@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vocalis AI • Stitch Design System & Screens Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            vocalis: {
+              primary: '#4648d4',
+              secondary: '#006c49',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              coral: '#ef4444',
+              surface: '#faf8ff',
+              surfaceDark: '#131b2e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .phone-mockup {
+      width: 412px;
+      height: 870px;
+      box-shadow: 0 25px 60px -15px rgba(30, 41, 59, 0.3), 0 0 0 12px #1e293b, 0 0 0 14px #475569;
+      border-radius: 48px;
+      overflow: hidden;
+      position: relative;
+      background: #000;
+    }
+    .island {
+      width: 110px;
+      height: 26px;
+      background: #000;
+      border-radius: 20px;
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      pointer-events: none;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-slate-950/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <img src="assets/logo.svg" alt="Vocalis AI Logo" class="w-9 h-9">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold text-lg text-white tracking-tight">Vocalis AI</span>
+          <span class="text-xs bg-indigo-500/20 text-indigo-300 font-mono px-2 py-0.5 rounded-full border border-indigo-500/30">Stitch v0.1</span>
+        </div>
+        <p class="text-xs text-slate-400">English Pronunciation Trainer • Mobile Screen Explorer</p>
+      </div>
+    </div>
+
+    <!-- Mode Selector: Live HTML vs Screenshot -->
+    <div class="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 text-xs">
+      <button id="view-mode-html" onclick="setViewMode('html')" class="px-3 py-1.5 rounded-lg font-medium transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[16px]">code</span>
+        HTML Interativo
+      </button>
+      <button id="view-mode-screenshot" onclick="setViewMode('screenshot')" class="px-3 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[16px]">image</span>
+        Screenshot Original
+      </button>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="flex items-center gap-2">
+      <a href="design-system/design-system.md" target="_blank" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 border border-slate-700">
+        <span class="material-symbols-outlined text-[15px]">palette</span>
+        Design System
+      </a>
+      <a id="btn-open-raw" href="screens/html/01_dashboard.html" target="_blank" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 font-medium shadow-sm">
+        <span class="material-symbols-outlined text-[15px]">open_in_new</span>
+        Abrir Tela Cheia
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+    
+    <!-- Sidebar: Screen Navigation -->
+    <aside class="w-full lg:w-80 bg-slate-950/50 border-r border-slate-800 p-5 flex flex-col gap-5 overflow-y-auto shrink-0">
+      <div>
+        <span class="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold">Telas do Projeto (Stitch)</span>
+        <div class="mt-3 flex flex-col gap-2">
+          
+          <!-- Screen 1 Button -->
+          <button onclick="selectScreen(0)" id="screen-btn-0" class="screen-btn w-full text-left p-3 rounded-xl border border-indigo-500/40 bg-indigo-950/30 text-white transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 font-mono text-xs flex items-center justify-center font-bold">01</span>
+              <div>
+                <div class="font-semibold text-sm">Dashboard</div>
+                <div class="text-[11px] text-slate-400">Progresso & Seleção de Modo</div>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-[18px] text-indigo-400">chevron_right</span>
+          </button>
+
+          <!-- Screen 2 Button -->
+          <button onclick="selectScreen(1)" id="screen-btn-1" class="screen-btn w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 text-slate-300 transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 font-mono text-xs flex items-center justify-center font-bold">02</span>
+              <div>
+                <div class="font-semibold text-sm">Repetição Guiada</div>
+                <div class="text-[11px] text-slate-400">Gravação & Onda Sonora</div>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-[18px] text-slate-500 group-hover:text-slate-300">chevron_right</span>
+          </button>
+
+          <!-- Screen 3 Button -->
+          <button onclick="selectScreen(2)" id="screen-btn-2" class="screen-btn w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 text-slate-300 transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 font-mono text-xs flex items-center justify-center font-bold">03</span>
+              <div>
+                <div class="font-semibold text-sm">Feedback de Pronúncia</div>
+                <div class="text-[11px] text-slate-400">Análise Acústica & Fonemas</div>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-[18px] text-slate-500 group-hover:text-slate-300">chevron_right</span>
+          </button>
+
+          <!-- Screen 4 Button -->
+          <button onclick="selectScreen(3)" id="screen-btn-3" class="screen-btn w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 text-slate-300 transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 font-mono text-xs flex items-center justify-center font-bold">04</span>
+              <div>
+                <div class="font-semibold text-sm">Conversação Livre</div>
+                <div class="text-[11px] text-slate-400">Diálogo com IA & STT</div>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-[18px] text-slate-500 group-hover:text-slate-300">chevron_right</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Quick Tokens Card -->
+      <div class="mt-auto bg-slate-900 rounded-2xl p-4 border border-slate-800">
+        <div class="text-xs font-mono uppercase text-slate-400 font-semibold mb-3 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Cores Semânticas Fonéticas
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-[11px]">
+          <div class="flex items-center gap-2 p-1.5 rounded-lg bg-slate-800/80">
+            <span class="w-3.5 h-3.5 rounded-full bg-[#10B981] shrink-0"></span>
+            <div>
+              <div class="font-bold text-slate-200">#10B981</div>
+              <div class="text-slate-400 text-[10px]">Fonema Correto</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 p-1.5 rounded-lg bg-slate-800/80">
+            <span class="w-3.5 h-3.5 rounded-full bg-[#F59E0B] shrink-0"></span>
+            <div>
+              <div class="font-bold text-slate-200">#F59E0B</div>
+              <div class="text-slate-400 text-[10px]">Quase lá</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 p-1.5 rounded-lg bg-slate-800/80">
+            <span class="w-3.5 h-3.5 rounded-full bg-[#EF4444] shrink-0"></span>
+            <div>
+              <div class="font-bold text-slate-200">#EF4444</div>
+              <div class="text-slate-400 text-[10px]">Ajustar Som</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 p-1.5 rounded-lg bg-slate-800/80">
+            <span class="w-3.5 h-3.5 rounded-full bg-[#6366F1] shrink-0"></span>
+            <div>
+              <div class="font-bold text-slate-200">#6366F1</div>
+              <div class="text-slate-400 text-[10px]">Marca / Ação</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+          <span>Fontes: Plus Jakarta + JetBrains</span>
+          <span class="font-mono text-indigo-400">Mobile 390px</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Stage: Phone Mockup Frame -->
+    <section class="flex-1 flex flex-col items-center justify-center p-6 bg-slate-900/60 overflow-y-auto">
+      
+      <!-- Screen Title Bar -->
+      <div class="mb-4 text-center">
+        <h2 id="current-screen-title" class="text-lg font-bold text-white tracking-tight">1. Tela Inicial - Dashboard</h2>
+        <p id="current-screen-desc" class="text-xs text-slate-400 font-mono mt-0.5">screens/html/01_dashboard.html</p>
+      </div>
+
+      <!-- Smartphone Container -->
+      <div class="phone-mockup">
+        <!-- Dynamic Island -->
+        <div class="island"></div>
+        
+        <!-- Live HTML Container -->
+        <iframe id="preview-iframe" src="screens/html/01_dashboard.html"></iframe>
+        
+        <!-- Screenshot Preview Container (Hidden by default) -->
+        <div id="preview-screenshot-container" class="w-full h-full overflow-y-auto hidden bg-black">
+          <img id="preview-screenshot-img" src="screens/screenshots/01_dashboard.png" alt="Screenshot" class="w-full h-auto">
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const screens = [
+      {
+        title: "1. Tela Inicial - Dashboard",
+        desc: "screens/html/01_dashboard.html",
+        html: "screens/html/01_dashboard.html",
+        screenshot: "screens/screenshots/01_dashboard.png"
+      },
+      {
+        title: "2. Repetição Guiada (Gravação)",
+        desc: "screens/html/02_repeticao_guiada.html",
+        html: "screens/html/02_repeticao_guiada.html",
+        screenshot: "screens/screenshots/02_repeticao_guiada.png"
+      },
+      {
+        title: "3. Feedback de Pronúncia (IA)",
+        desc: "screens/html/03_feedback_pronuncia.html",
+        html: "screens/html/03_feedback_pronuncia.html",
+        screenshot: "screens/screenshots/03_feedback_pronuncia.png"
+      },
+      {
+        title: "4. Conversação Livre (Free Speaking)",
+        desc: "screens/html/04_conversacao_livre.html",
+        html: "screens/html/04_conversacao_livre.html",
+        screenshot: "screens/screenshots/04_conversacao_livre.png"
+      }
+    ];
+
+    let currentScreenIdx = 0;
+    let currentMode = 'html'; // 'html' or 'screenshot'
+
+    function selectScreen(idx) {
+      currentScreenIdx = idx;
+      const s = screens[idx];
+
+      // Update Titles
+      document.getElementById('current-screen-title').textContent = s.title;
+      document.getElementById('current-screen-desc').textContent = currentMode === 'html' ? s.desc : s.screenshot;
+
+      // Update Sources
+      document.getElementById('preview-iframe').src = s.html;
+      document.getElementById('preview-screenshot-img').src = s.screenshot;
+      document.getElementById('btn-open-raw').href = currentMode === 'html' ? s.html : s.screenshot;
+
+      // Update Sidebar Active Styles
+      for (let i = 0; i < screens.length; i++) {
+        const btn = document.getElementById(`screen-btn-${i}`);
+        if (i === idx) {
+          btn.className = "screen-btn w-full text-left p-3 rounded-xl border border-indigo-500/40 bg-indigo-950/30 text-white transition-all flex items-center justify-between group";
+        } else {
+          btn.className = "screen-btn w-full text-left p-3 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 text-slate-300 transition-all flex items-center justify-between group";
+        }
+      }
+    }
+
+    function setViewMode(mode) {
+      currentMode = mode;
+      const btnHtml = document.getElementById('view-mode-html');
+      const btnShot = document.getElementById('view-mode-screenshot');
+      const iframe = document.getElementById('preview-iframe');
+      const shotContainer = document.getElementById('preview-screenshot-container');
+      const s = screens[currentScreenIdx];
+
+      if (mode === 'html') {
+        btnHtml.className = "px-3 py-1.5 rounded-lg font-medium transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-1.5";
+        btnShot.className = "px-3 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5";
+        iframe.classList.remove('hidden');
+        shotContainer.classList.add('hidden');
+        document.getElementById('btn-open-raw').href = s.html;
+        document.getElementById('current-screen-desc').textContent = s.desc;
+      } else {
+        btnShot.className = "px-3 py-1.5 rounded-lg font-medium transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-1.5";
+        btnHtml.className = "px-3 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200 flex items-center gap-1.5";
+        iframe.classList.add('hidden');
+        shotContainer.classList.remove('hidden');
+        document.getElementById('btn-open-raw').href = s.screenshot;
+        document.getElementById('current-screen-desc').textContent = s.screenshot;
+      }
+    }
+  </script>
+</body>
+</html>
