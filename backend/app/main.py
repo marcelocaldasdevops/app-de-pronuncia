@@ -43,7 +43,7 @@ def root():
 def health_check():
     return {
         "status": "ok",
-        "engine": "torchaudio-wav2vec2-forced-alignment",
+        "engine": "wav2vec2" if aligner.is_ready() else "cloud-lightweight",
         "model_loaded": aligner.is_ready()
     }
 
@@ -114,8 +114,4 @@ async def assess_pronunciation(
 
 @app.on_event("startup")
 def startup_event():
-    print("[Startup] Inicializando Vocalis AI Pronunciation Engine...")
-    try:
-        aligner.load_model()
-    except Exception as e:
-        print(f"[Startup] Aviso ao carregar modelo no início (carregará sob demanda): {e}")
+    print("[Startup] Vocalis AI Backend inicializado em modo nuvem leve (FastAPI + G2P + EdgeTTS).")

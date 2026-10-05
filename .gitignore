@@ -71,4 +71,5 @@ app_*_live.png
 .cursor/*
 agent/*
 
-# venv
+# Scratch & local temp
+scratch/

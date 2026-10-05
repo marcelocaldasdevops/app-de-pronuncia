@@ -9,17 +9,30 @@ import re
 from typing import Dict, Any, List, Tuple
 import numpy as np
 
-import torch
-import torchaudio
-import soundfile as sf
+try:
+    import torch
+    import torchaudio
+    TORCH_AVAILABLE = True
+except ImportError:
+    torch = None
+    torchaudio = None
+    TORCH_AVAILABLE = False
+
+try:
+    import soundfile as sf
+except ImportError:
+    sf = None
 
 from .phonetics import sentence_to_ipa, arpabet_to_ipa, get_phoneme_tip
 
 class AcousticAligner:
     def __init__(self):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        if self.device.type == "cpu":
-            torch.set_num_threads(1)
+        if TORCH_AVAILABLE and torch is not None:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            if getattr(self.device, "type", None) == "cpu":
+                torch.set_num_threads(1)
+        else:
+            self.device = "cpu"
         self.model = None
         self.labels = None
         self.dictionary = None
@@ -27,6 +40,10 @@ class AcousticAligner:
 
     def load_model(self):
         """Lazy load of Wav2Vec2 ASR model bundle."""
+        if not TORCH_AVAILABLE:
+            self._loaded = False
+            return
+
         if self._loaded:
             return
 
@@ -43,27 +60,26 @@ class AcousticAligner:
             self._loaded = False
 
     def is_ready(self) -> bool:
-        return self._loaded
+        return TORCH_AVAILABLE and self._loaded
 
-    def preprocess_audio(self, audio_bytes: bytes) -> torch.Tensor:
+    def preprocess_audio(self, audio_bytes: bytes):
         """
         Reads raw audio bytes, converts to 16kHz mono tensor.
         """
+        if not TORCH_AVAILABLE or torch is None:
+            return None
+
         try:
             data, sample_rate = sf.read(io.BytesIO(audio_bytes), dtype="float32")
         except Exception:
-            # Fallback with torchaudio
             waveform, sample_rate = torchaudio.load(io.BytesIO(audio_bytes))
             data = waveform.numpy().T
 
-        # Convert to tensor (channels, time)
         if data.ndim == 1:
             waveform = torch.from_numpy(data).unsqueeze(0)
         else:
-            # Multi-channel to mono
             waveform = torch.from_numpy(data.T).mean(dim=0, keepdim=True)
 
-        # Resample to 16,000 Hz if needed
         target_sample_rate = 16000
         if sample_rate != target_sample_rate:
             resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=target_sample_rate)
@@ -75,8 +91,11 @@ class AcousticAligner:
         """
         Performs forced alignment and phoneme-level scoring on the audio.
         """
-        self.load_model()
         phonetics_data = sentence_to_ipa(reference_text)
+        if not TORCH_AVAILABLE:
+            return self._fallback_score(reference_text, phonetics_data)
+
+        self.load_model()
         words_info = phonetics_data["words"]
 
         if not self._loaded:
