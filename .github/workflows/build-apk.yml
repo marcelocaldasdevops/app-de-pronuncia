@@ -1,0 +1,65 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'vocalis_app/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        working-directory: ./vocalis_app
+        run: flutter pub get
+
+      - name: Build APK (Release)
+        working-directory: ./vocalis_app
+        run: |
+          flutter build apk --release --dart-define=BACKEND_URL=https://app-de-pronuncia.onrender.com
+          cp build/app/outputs/flutter-apk/app-release.apk ../vocalis-app.apk
+
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vocalis-app-apk
+          path: vocalis-app.apk
+
+      - name: Update GitHub Release (Latest)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Vocalis App - Última Versão Android"
+          body: |
+            Nova versão compilada automaticamente pelo GitHub Actions.
+
+            📲 **Baixar APK no celular:**
+            https://github.com/${{ github.repository }}/releases/latest/download/vocalis-app.apk
+          files: vocalis-app.apk
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
