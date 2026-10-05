@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pronunciation_result.dart';
@@ -11,7 +10,11 @@ class PronunciationService {
   String backendUrl;
 
   PronunciationService({String? backendUrl})
-      : backendUrl = backendUrl ?? (kIsWeb ? 'http://localhost:8000' : 'http://192.168.1.22:8000') {
+      : backendUrl = backendUrl ??
+            const String.fromEnvironment(
+              'BACKEND_URL',
+              defaultValue: 'https://app-de-pronuncia.onrender.com',
+            ) {
     _loadBackendUrl();
   }
 
@@ -36,7 +39,7 @@ class PronunciationService {
   Future<bool> checkHealth() async {
     try {
       final res = await http.get(Uri.parse('$backendUrl/api/health')).timeout(
-        const Duration(seconds: 2),
+        const Duration(seconds: 6),
       );
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
