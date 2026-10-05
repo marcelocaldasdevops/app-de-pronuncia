@@ -9,6 +9,16 @@ from typing import List, Dict, Any
 import re
 
 try:
+    import nltk
+    for pkg in ["averaged_perceptron_tagger", "averaged_perceptron_tagger_eng", "cmudict"]:
+        try:
+            nltk.download(pkg, quiet=True)
+        except Exception:
+            pass
+except Exception:
+    pass
+
+try:
     from g2p_en import G2p
     _g2p = G2p()
 except Exception:
@@ -100,10 +110,13 @@ def word_to_phonemes(word: str) -> List[Dict[str, str]]:
     if not clean_word:
         return []
 
+    arpabet_tokens = []
     if _g2p is not None:
-        phonemes_raw = _g2p(clean_word)
-        # Filter out spaces or punctuation
-        arpabet_tokens = [clean_arpabet_token(p) for p in phonemes_raw if re.match(r"^[A-Za-z0-9]+$", p)]
+        try:
+            phonemes_raw = _g2p(clean_word)
+            arpabet_tokens = [clean_arpabet_token(p) for p in phonemes_raw if re.match(r"^[A-Za-z0-9]+$", p)]
+        except Exception as e:
+            arpabet_tokens = [c.upper() for c in clean_word if c.isalnum()]
     else:
         # Fallback if g2p-en failed to load
         arpabet_tokens = [c.upper() for c in clean_word if c.isalnum()]

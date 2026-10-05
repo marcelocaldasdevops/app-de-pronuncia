@@ -81,13 +81,17 @@ def grapheme_to_phoneme(req: G2PRequest):
     if not req.text or not req.text.strip():
         raise HTTPException(status_code=400, detail="Texto de entrada não pode ser vazio.")
 
-    result = sentence_to_ipa(req.text.strip())
-    return {
-        "sentence": result["sentence"],
-        "phoneticIpa": result["phonetic_ipa"],
-        "friendlyPhonetic": result.get("friendly_phonetic", ""),
-        "words": result["words"]
-    }
+    try:
+        result = sentence_to_ipa(req.text.strip())
+        return {
+            "sentence": result["sentence"],
+            "phoneticIpa": result["phonetic_ipa"],
+            "friendlyPhonetic": result.get("friendly_phonetic", ""),
+            "words": result["words"]
+        }
+    except Exception as e:
+        print(f"[API Error] /api/g2p error: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro na conversão fonética: {str(e)}")
 
 @app.post("/api/assess")
 async def assess_pronunciation(
