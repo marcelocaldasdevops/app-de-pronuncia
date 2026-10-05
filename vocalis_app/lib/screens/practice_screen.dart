@@ -14,6 +14,8 @@ import '../services/storage_service.dart';
 import '../services/recording_service.dart';
 import '../services/live_transcript_service.dart';
 import '../services/openrouter_service.dart';
+import '../services/phonetic_converter.dart';
+import '../services/downloader/audio_downloader.dart';
 import '../theme/app_theme.dart';
 import '../widgets/waveform_visualizer.dart';
 import 'feedback_dialog.dart';
@@ -229,20 +231,53 @@ class _PracticeScreenState extends State<PracticeScreen> {
     });
   }
 
+  void _onCustomTextChanged(String val) {
+    final text = val.trim();
+    setState(() {
+      _currentSentence = val;
+      if (text.isEmpty) {
+        _currentIpa = '';
+        _currentFriendlyPhonetic = '';
+        _currentTranslation = '';
+      } else {
+        _currentFriendlyPhonetic = PhoneticConverter.textToFriendly(text);
+        _currentTranslation = '';
+      }
+    });
+  }
+
   Future<void> _fetchIpaForCustomText() async {
     final text = _textController.text.trim();
-    if (text.isEmpty) return;
-
-    // Try backend G2P first
-    final g2p = await _pronunciationService.getPhoneticsG2P(text);
-    if (g2p != null && g2p['phoneticIpa'] != null) {
+    if (text.isEmpty) {
       setState(() {
-        _currentIpa = g2p['phoneticIpa'] as String;
+        _currentSentence = '';
+        _currentIpa = '';
+        _currentFriendlyPhonetic = '';
+        _currentTranslation = '';
       });
       return;
     }
 
-    // Local dictionary fallback
+    setState(() {
+      _currentSentence = text;
+      _currentTranslation = '';
+    });
+
+    // Try backend G2P first
+    final g2p = await _pronunciationService.getPhoneticsG2P(text);
+    if (g2p != null && g2p['phoneticIpa'] != null) {
+      final ipa = g2p['phoneticIpa'] as String;
+      final friendlyFromBackend = (g2p['friendlyPhonetic'] as String?) ?? '';
+      setState(() {
+        _currentIpa = ipa;
+        _currentFriendlyPhonetic = friendlyFromBackend.isNotEmpty
+            ? friendlyFromBackend
+            : PhoneticConverter.textToFriendly(text, ipaString: ipa);
+      });
+      return;
+    }
+
+    // Local dictionary and algorithmic converter fallback
     final words = text
         .replaceAll(RegExp(r'[^\w\s]'), ' ')
         .toLowerCase()
@@ -250,8 +285,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
         .where((w) => w.isNotEmpty)
         .toList();
     final ipaParts = words.map((w) => ipaDictionary[w]?.ipa ?? '/$w/').toList();
+    final ipaJoined = ipaParts.join(' ');
     setState(() {
-      _currentIpa = ipaParts.join(' ');
+      _currentIpa = ipaJoined;
+      _currentFriendlyPhonetic = PhoneticConverter.textToFriendly(text, ipaString: ipaJoined);
     });
   }
 
@@ -349,6 +386,56 @@ class _PracticeScreenState extends State<PracticeScreen> {
       _lastRecording = null;
       _isPlayingRecording = false;
     });
+  }
+
+  Future<void> _downloadRecording() async {
+    final recording = _lastRecording;
+    if (recording == null || recording.bytes.isEmpty) return;
+
+    final cleanName = _currentSentence
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_');
+    final slug = cleanName.isEmpty
+        ? 'gravacao'
+        : (cleanName.length > 25 ? cleanName.substring(0, 25) : cleanName);
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final fileName = 'vocalis_${slug}_$timestamp.wav';
+
+    try {
+      final savedPath = await AudioDownloader.download(
+        recording.bytes,
+        filename: fileName,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              kIsWeb
+                  ? 'Download do áudio iniciado: $fileName'
+                  : 'Áudio salvo em: ${savedPath ?? fileName}',
+              style: GoogleFonts.plusJakartaSans(color: Colors.white),
+            ),
+            backgroundColor: AppTheme.success,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Erro ao baixar gravação: $e',
+              style: GoogleFonts.plusJakartaSans(color: Colors.white),
+            ),
+            backgroundColor: AppTheme.danger,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _runAssessment({
@@ -811,6 +898,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 _isCustomMode = !_isCustomMode;
                 if (!_isCustomMode) {
                   _loadExercise(exerciseCatalog[_catalogIndex]);
+                } else {
+                  _currentTranslation = '';
+                  if (_textController.text.trim().isNotEmpty) {
+                    _currentSentence = _textController.text;
+                    _currentFriendlyPhonetic = PhoneticConverter.textToFriendly(_textController.text);
+                  }
                 }
               });
             },
@@ -866,6 +959,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
                       onTap: () {
                         setState(() {
                           _isCustomMode = true;
+                          _currentTranslation = '';
+                          if (_textController.text.trim().isNotEmpty) {
+                            _currentSentence = _textController.text;
+                            _currentFriendlyPhonetic = PhoneticConverter.textToFriendly(_textController.text);
+                          }
                         });
                       },
                       child: Container(
@@ -928,20 +1026,20 @@ class _PracticeScreenState extends State<PracticeScreen> {
                         decoration: const InputDecoration(
                           hintText: 'Ex: Could you recommend a cozy coffee shop nearby?',
                         ),
-                        onChanged: (val) {
-                          setState(() {
-                            _currentSentence = val;
-                          });
-                        },
+                        onChanged: _onCustomTextChanged,
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
-                            child: OutlinedButton.icon(
+                            child: ElevatedButton.icon(
                               onPressed: _fetchIpaForCustomText,
-                              icon: const Icon(Icons.translate, size: 18),
-                              label: const Text('Carregar IPA'),
+                              icon: const Icon(Icons.auto_awesome, size: 18),
+                              label: const Text('Carregar Fonética & Pronúncia'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primary,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
                             ),
                           ),
                         ],
@@ -1355,6 +1453,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
                               ),
                               tooltip: _isPlayingRecording ? 'Pausar gravação' : 'Ouvir gravação',
                               onPressed: _playRecordingPreview,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.download_rounded,
+                                  size: 20, color: AppTheme.primary),
+                              tooltip: 'Baixar gravação (WAV)',
+                              onPressed: _downloadRecording,
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_outline,

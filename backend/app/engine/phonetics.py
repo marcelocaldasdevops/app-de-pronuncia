@@ -118,6 +118,45 @@ def word_to_phonemes(word: str) -> List[Dict[str, str]]:
         })
     return result
 
+def ipa_to_friendly_phonetic(ipa_str: str) -> str:
+    s = ipa_str.strip().strip('/')
+    replacements = [
+        ('tʃ', 'tch'),
+        ('dʒ', 'dj'),
+        ('ʃ', 'x'),
+        ('ʒ', 'j'),
+        ('θ', 'th'),
+        ('ð', 'd'),
+        ('ŋ', 'ng'),
+        ('aɪ', 'ái'),
+        ('eɪ', 'ei'),
+        ('ɔɪ', 'ói'),
+        ('aʊ', 'áu'),
+        ('oʊ', 'ôu'),
+        ('iː', 'í'),
+        ('uː', 'ú'),
+        ('ɜːr', 'ər'),
+        ('t̬ɚ', 'dər'),
+        ('ɚ', 'ər'),
+        ('ɑː', 'ó'),
+        ('ɔː', 'ó'),
+        ('ʌ', 'â'),
+        ('æ', 'é'),
+        ('ɛ', 'é'),
+        ('ɪ', 'i'),
+        ('ʊ', 'u'),
+        ('ɡ', 'g'),
+        ('w', 'u'),
+        ('j', 'i'),
+        ('h', 'r'),
+    ]
+    for old, new in replacements:
+        s = s.replace(old, new)
+    s = s.replace('ˈ', '').replace('ˌ', '').replace('.', '-')
+    if s:
+        s = s[0].upper() + s[1:]
+    return s
+
 def sentence_to_ipa(text: str) -> Dict[str, Any]:
     """
     Converts a sentence into words with IPA transcriptions and individual phonemes.
@@ -146,9 +185,18 @@ def sentence_to_ipa(text: str) -> Dict[str, Any]:
             })
 
     full_ipa = f"/{' '.join(sentence_ipa_parts)}/" if sentence_ipa_parts else ""
+    friendly_phonetic = ipa_to_friendly_phonetic(full_ipa)
+    clean_text = text.strip()
+    if clean_text.endswith('?') and not friendly_phonetic.endswith('?'):
+        friendly_phonetic += '?'
+    elif clean_text.endswith('!') and not friendly_phonetic.endswith('!'):
+        friendly_phonetic += '!'
+    elif clean_text.endswith('.') and not friendly_phonetic.endswith('.'):
+        friendly_phonetic += '.'
 
     return {
         "sentence": text,
         "phonetic_ipa": full_ipa,
+        "friendly_phonetic": friendly_phonetic,
         "words": word_details
     }

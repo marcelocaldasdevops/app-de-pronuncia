@@ -18,6 +18,8 @@ from .phonetics import sentence_to_ipa, arpabet_to_ipa, get_phoneme_tip
 class AcousticAligner:
     def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if self.device.type == "cpu":
+            torch.set_num_threads(1)
         self.model = None
         self.labels = None
         self.dictionary = None

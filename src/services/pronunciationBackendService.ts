@@ -19,20 +19,38 @@ export interface PhoneticsResponse {
 class PronunciationBackendService {
   private backendAlive: boolean | null = null;
   private lastCheckTime = 0;
-  private readonly CHECK_CACHE_MS = 10_000;
+  private readonly CHECK_CACHE_MS = 15_000;
+  private readonly NEGATIVE_CACHE_MS = 4_000;
+
+  constructor() {
+    // Warm-up inicial em background para acordar instâncias gratuitas no Render
+    this.warmup();
+  }
+
+  /**
+   * Ping silencioso para acordar o servidor na nuvem (ex: Render free tier)
+   */
+  warmup(): void {
+    try {
+      fetch(`${BACKEND_BASE_URL}/api/health`, { method: 'GET' }).catch(() => {});
+    } catch {
+      // Ignora erro silencioso no warmup
+    }
+  }
 
   /**
    * Verifica se o backend Python/FastAPI está online
    */
   async isBackendAvailable(): Promise<boolean> {
     const now = Date.now();
-    if (this.backendAlive !== null && now - this.lastCheckTime < this.CHECK_CACHE_MS) {
+    const cacheLimit = this.backendAlive === true ? this.CHECK_CACHE_MS : this.NEGATIVE_CACHE_MS;
+    if (this.backendAlive !== null && now - this.lastCheckTime < cacheLimit) {
       return this.backendAlive;
     }
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       const res = await fetch(`${BACKEND_BASE_URL}/api/health`, {
         signal: controller.signal,
       });

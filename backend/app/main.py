@@ -85,6 +85,7 @@ def grapheme_to_phoneme(req: G2PRequest):
     return {
         "sentence": result["sentence"],
         "phoneticIpa": result["phonetic_ipa"],
+        "friendlyPhonetic": result.get("friendly_phonetic", ""),
         "words": result["words"]
     }
 
