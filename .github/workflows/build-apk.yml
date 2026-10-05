@@ -37,6 +37,11 @@ jobs:
         working-directory: ./vocalis_app
         run: flutter pub get
 
+      - name: Generate Release Keystore
+        working-directory: ./vocalis_app/android/app
+        run: |
+          keytool -genkeypair -v -keystore vocalis-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias vocalis -storepass vocalis123 -keypass vocalis123 -dname "CN=Vocalis, OU=AI, O=Vocalis, L=Manaus, ST=AM, C=BR"
+
       - name: Build APK (Release)
         working-directory: ./vocalis_app
         run: |

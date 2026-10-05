@@ -29,21 +29,28 @@ android {
         versionName = flutter.versionName
     }
 
+    val keystoreFile = file("vocalis-release.jks")
     signingConfigs {
         create("release") {
-            storeFile = file("vocalis-release.jks")
-            storePassword = "vocalis123"
-            keyAlias = "vocalis"
-            keyPassword = "vocalis123"
-            enableV1Signing = true
-            enableV2Signing = true
-            enableV3Signing = true
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = "vocalis123"
+                keyAlias = "vocalis"
+                keyPassword = "vocalis123"
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (keystoreFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
