@@ -7,11 +7,12 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import edge_tts
 
 from .engine.aligner import aligner
 from .engine.phonetics import sentence_to_ipa
+from .engine.whisper_stt import whisper_engine
 
 app = FastAPI(
     title="Vocalis AI - Pronunciation Engine",
@@ -44,7 +45,9 @@ def health_check():
     return {
         "status": "ok",
         "engine": "wav2vec2" if aligner.is_ready() else "cloud-lightweight",
-        "model_loaded": aligner.is_ready()
+        "model_loaded": aligner.is_ready(),
+        "whisper_ready": whisper_engine.is_ready(),
+        "whisper_model": whisper_engine.model_name
     }
 
 @app.get("/api/tts")
@@ -116,6 +119,32 @@ async def assess_pronunciation(
         print(f"[API Error] assess_pronunciation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Erro interno no processamento acústico: {str(e)}")
 
+@app.post("/transcribe")
+@app.post("/api/transcribe")
+async def transcribe(
+    audio_file: Optional[UploadFile] = File(None),
+    file: Optional[UploadFile] = File(None),
+    language: str = Query("en", description="Idioma do áudio (default: 'en')")
+):
+    """
+    Recebe um arquivo de áudio (preferencialmente WAV 16kHz mono) e retorna a transcrição
+    usando faster-whisper localmente, sem depender de tokens externos da Hugging Face.
+    """
+    upload = audio_file or file
+    if upload is None:
+        raise HTTPException(status_code=400, detail="Arquivo de áudio não fornecido ('audio_file' ou 'file').")
+
+    try:
+        audio_bytes = await upload.read()
+        if len(audio_bytes) == 0:
+            raise HTTPException(status_code=400, detail="Arquivo de áudio enviado está vazio.")
+
+        result = whisper_engine.transcribe(audio_bytes, language=language)
+        return result
+    except Exception as e:
+        print(f"[API Error] /transcribe failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro no processamento de transcrição STT: {str(e)}")
+
 @app.on_event("startup")
 def startup_event():
-    print("[Startup] Vocalis AI Backend inicializado em modo nuvem leve (FastAPI + G2P + EdgeTTS).")
+    print(f"[Startup] Vocalis AI Backend inicializado com Whisper STT (modelo: {whisper_engine.model_name}).")

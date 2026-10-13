@@ -1,8 +1,7 @@
 import { PronunciationResult, WordEvaluation } from '../types';
 import { ipaDictionary } from '../data/exercises';
-import { huggingFaceSpeech } from './huggingFaceSpeech';
 import { scorePronunciation } from './pronunciationScorerHF';
-import { toPronunciationResult } from './huggingFaceAdapter';
+import { toPronunciationResult } from './pronunciationAdapter';
 
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
@@ -114,9 +113,43 @@ class PronunciationBackendService {
   }
 
   /**
+   * Transcreve áudio no backend FastAPI usando faster-whisper (sem tokens externos).
+   */
+  async transcribeAudio(audioBlob: Blob): Promise<{ text: string }> {
+    if (!audioBlob || audioBlob.size === 0) {
+      throw new Error('Áudio gravado inválido ou vazio.');
+    }
+
+    const formData = new FormData();
+    const audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
+    formData.append('audio_file', audioFile);
+
+    const res = await fetch(`${BACKEND_BASE_URL}/api/transcribe`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => 'Erro desconhecido');
+      throw new Error(`Erro na API /transcribe (${res.status}): ${errText}`);
+    }
+
+    const data = await res.json();
+    return { text: (data.text || '').trim() };
+  }
+
+  /**
+   * Reconhecimento simples de fala (STT) via Faster-Whisper no backend.
+   */
+  async recognizeSpeech(audioBlob: Blob): Promise<string> {
+    const result = await this.transcribeAudio(audioBlob);
+    return result.text;
+  }
+
+  /**
    * Avalia a pronúncia de um áudio gravado contra a frase de referência.
    * Prioriza o backend Python (Wav2Vec2 Forced Alignment).
-   * Se o backend estiver indisponível, faz fallback automático para o Hugging Face Whisper + Levenshtein.
+   * Se o alinhamento falhar ou backend retornar erro, utiliza Faster-Whisper + Levenshtein.
    */
   async assessPronunciation(
     audioBlob: Blob,
@@ -165,24 +198,24 @@ class PronunciationBackendService {
             }),
             feedbackSummary: data.feedback_summary || data.feedbackSummary || 'Avaliação fonética concluída com sucesso.',
             articulationTip: data.articulation_tip || data.articulationTip,
-            provider: 'azure', // Usado como indicador de motor avançado
+            provider: 'azure', // Indicador de motor acústico avançado
           };
         } else {
-          console.warn('Backend retornou erro:', res.status, await res.text());
+          console.warn('Backend /api/assess retornou erro:', res.status, await res.text());
         }
       } catch (err) {
         console.warn('Falha na requisição ao backend Python, executando fallback local:', err);
       }
     }
 
-    // ── Fallback Resiliente (HF Whisper ou WebSpeech) ─────────────────────
+    // ── Fallback Resiliente (Faster-Whisper Backend ou WebSpeech) ─────────────────────
     let transcript = liveTranscriptFallback.trim();
-    if (huggingFaceSpeech.isConfigured() && audioBlob.size > 0) {
+    if (audioBlob && audioBlob.size > 0 && isAvailable) {
       try {
-        const hfResult = await huggingFaceSpeech.transcribeAudio(audioBlob);
-        if (hfResult.text) transcript = hfResult.text;
-      } catch (hfErr) {
-        console.warn('Hugging Face STT falhou, usando transcrição ao vivo:', hfErr);
+        const whisperResult = await this.transcribeAudio(audioBlob);
+        if (whisperResult.text) transcript = whisperResult.text;
+      } catch (err) {
+        console.warn('Faster-Whisper STT falhou, usando transcrição ao vivo:', err);
       }
     }
 

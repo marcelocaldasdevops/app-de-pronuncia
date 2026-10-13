@@ -40,7 +40,7 @@ export interface PronunciationResult {
   words: WordEvaluation[];
   feedbackSummary: string;
   articulationTip?: string;
-  provider?: 'azure' | 'huggingface' | 'fallback';
+  provider?: 'azure' | 'whisper' | 'fallback';
   prosodyScore?: number;
 }
 

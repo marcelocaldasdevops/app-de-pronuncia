@@ -1,0 +1,2521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Vocalis AI • Treinador de Pronúncia & Análise Acústica</title>
+  <meta name="description" content="Plataforma de alta precisão para treino de pronúncia em inglês com feedback fonético IPA em tempo real, repetição guiada (shadowing) e conversação imersiva com IA.">
+  <meta name="theme-color" content="#faf8ff">
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono com fallbacks nativos -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       1. DESIGN TOKENS (Extraídos da aba inspecionada Vocalis AI / Stitch)
+       ========================================================================== */
+    :root {
+      /* Paleta de Cores Primária e Superfícies (Material 3 Fidelity Variant) */
+      --color-primary: #4648d4;
+      --color-primary-container: #6063ee;
+      --color-on-primary: #ffffff;
+      --color-primary-fixed: #e1e0ff;
+      --color-primary-fixed-dim: #c0c1ff;
+      --color-on-primary-fixed: #07006c;
+      --color-on-primary-fixed-variant: #2f2ebe;
+
+      /* Cores Secundárias (Mastery / Sucesso Fonético) */
+      --color-secondary: #006c49;
+      --color-secondary-container: #6cf8bb;
+      --color-on-secondary: #ffffff;
+      --color-on-secondary-container: #00714d;
+      --color-secondary-fixed: #6ffbbe;
+      --color-secondary-fixed-dim: #4edea3;
+      --color-on-secondary-fixed: #002113;
+      --color-emerald-soft: #ecfdf5;
+      --color-emerald-border: #10b981;
+
+      /* Cores Terciárias (Streak / Alerta / Refinamento) */
+      --color-tertiary: #825100;
+      --color-tertiary-container: #a36700;
+      --color-on-tertiary: #ffffff;
+      --color-tertiary-fixed: #ffddb8;
+      --color-tertiary-fixed-dim: #ffb95f;
+      --color-on-tertiary-fixed: #2a1700;
+      --color-amber-soft: #fffbeb;
+      --color-amber-border: #f59e0b;
+
+      /* Cores de Erro / Correção Fonética */
+      --color-error: #ba1a1a;
+      --color-error-container: #ffdad6;
+      --color-on-error: #ffffff;
+      --color-on-error-container: #93000a;
+      --color-coral-soft: #fef2f2;
+      --color-coral-border: #ef4444;
+
+      /* Camadas de Superfície & Neutros */
+      --color-background: #faf8ff;
+      --color-surface: #faf8ff;
+      --color-surface-dim: #d2d9f4;
+      --color-surface-bright: #faf8ff;
+      --color-surface-container-lowest: #ffffff;
+      --color-surface-container-low: #f2f3ff;
+      --color-surface-container: #eaedff;
+      --color-surface-container-high: #e2e7ff;
+      --color-surface-container-highest: #dae2fd;
+      --color-surface-variant: #dae2fd;
+
+      --color-on-surface: #131b2e;
+      --color-on-surface-variant: #464554;
+      --color-outline: #767586;
+      --color-outline-variant: #c7c4d7;
+      --color-inverse-surface: #283044;
+      --color-inverse-on-surface: #eef0ff;
+
+      /* Tipografia */
+      --font-family-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      /* Escalas de Espaçamento */
+      --space-xs: 0.25rem;    /* 4px */
+      --space-sm: 0.5rem;     /* 8px */
+      --space-md: 0.875rem;   /* 14px */
+      --space-lg: 1.25rem;    /* 20px */
+      --space-xl: 2rem;       /* 32px */
+      --margin: 1.25rem;      /* 20px */
+      --gutter: 1rem;         /* 16px */
+
+      /* Raios de Borda (Morphology Pill / Round Full) */
+      --radius-sm: 0.5rem;    /* 8px */
+      --radius-md: 1rem;      /* 16px */
+      --radius-lg: 2rem;      /* 32px */
+      --radius-xl: 3rem;      /* 48px */
+      --radius-full: 9999px;
+
+      /* Sistema de Sombras & Elevação */
+      --shadow-sm: 0 1px 4px rgba(19, 27, 46, 0.05);
+      --shadow-md: 0 2px 8px -2px rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 12px 32px -6px rgba(70, 72, 212, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+      --shadow-mic-idle: 0 8px 24px -4px rgba(70, 72, 212, 0.35);
+      --shadow-mic-recording: 0 0 0 8px rgba(239, 68, 68, 0.22), 0 0 32px rgba(239, 68, 68, 0.45);
+
+      /* Transições suaves */
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-bounce: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Sobrescrita de Tema Escuro */
+    [data-theme="dark"] {
+      --color-background: #0b0f19;
+      --color-surface: #0e1424;
+      --color-surface-dim: #090d16;
+      --color-surface-bright: #172036;
+      --color-surface-container-lowest: #131b2e;
+      --color-surface-container-low: #182239;
+      --color-surface-container: #1e2a47;
+      --color-surface-container-high: #243254;
+      --color-surface-container-highest: #2b3b63;
+      --color-surface-variant: #263353;
+
+      --color-on-surface: #eef0ff;
+      --color-on-surface-variant: #a2a9c2;
+      --color-outline: #616a85;
+      --color-outline-variant: #343e5c;
+
+      --color-emerald-soft: rgba(16, 185, 129, 0.15);
+      --color-amber-soft: rgba(245, 158, 11, 0.15);
+      --color-coral-soft: rgba(239, 68, 68, 0.15);
+
+      --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    /* ==========================================================================
+       2. RESET & BASE ESTILOS
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: var(--color-background);
+      color: var(--color-on-surface);
+      font-family: var(--font-family-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+      overscroll-behavior-y: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: inherit;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    input, textarea {
+      font-family: inherit;
+      border: none;
+      outline: none;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Acessibilidade de Foco */
+    :focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* ==========================================================================
+       3. ESTRUTURA RESPONSIVA / APP SHELL
+       ========================================================================== */
+    .app-root {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: linear-gradient(180deg, var(--color-background) 0%, var(--color-surface-container-low) 100%);
+      padding: 0;
+      position: relative;
+    }
+
+    /* Moldura Centralizada de Apresentação Mobile / Adaptativa para Telas Maiores */
+    .viewport-frame {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--color-surface);
+      position: relative;
+      box-shadow: 0 0 40px rgba(19, 27, 46, 0.06);
+      transition: max-width var(--transition-normal);
+    }
+
+    /* Modo Expandido Desktop via Alternador */
+    .viewport-frame.is-expanded {
+      max-width: 1080px;
+    }
+
+    /* ==========================================================================
+       4. CABEÇALHO & BARRA DE STATUS
+       ========================================================================== */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(250, 248, 255, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(199, 196, 215, 0.25);
+      padding: var(--space-xs) var(--margin) var(--space-sm);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    [data-theme="dark"] .app-header {
+      background: rgba(14, 20, 36, 0.88);
+      border-bottom: 1px solid rgba(52, 62, 92, 0.4);
+    }
+
+    .status-bar-sim {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 20px;
+      font-family: var(--font-family-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-on-surface-variant);
+      padding: 0 2px;
+    }
+
+    .status-bar-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 48px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .brand-logo-svg {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(70, 72, 212, 0.3);
+    }
+
+    .brand-titles {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--color-on-surface);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .brand-subtitle {
+      font-family: var(--font-family-mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-on-surface-variant);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    .streak-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background-color: var(--color-surface-container);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-family-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-tertiary);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .btn-header-tool {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-full);
+      background-color: var(--color-surface-container);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-on-surface);
+      transition: background-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .btn-header-tool:hover {
+      background-color: var(--color-surface-container-high);
+      transform: scale(1.05);
+    }
+
+    .avatar-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      border: 2px solid var(--color-surface-container-lowest);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ==========================================================================
+       5. CONTEÚDO PRINCIPAL (TELAS & FLUXOS)
+       ========================================================================== */
+    .main-viewport {
+      flex: 1;
+      padding: var(--space-md) var(--margin) calc(80px + var(--space-lg));
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .screen-panel {
+      display: none;
+      flex-direction: column;
+      gap: var(--space-md);
+      animation: fadeInScreen var(--transition-normal) forwards;
+    }
+
+    .screen-panel.is-active {
+      display: flex;
+    }
+
+    @keyframes fadeInScreen {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ==========================================================================
+       6. COMPONENTES VISUAIS & BENTO CARDS
+       ========================================================================== */
+    .bento-card {
+      background-color: var(--color-surface-container-lowest);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(199, 196, 215, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      position: relative;
+      overflow: hidden;
+    }
+
+    [data-theme="dark"] .bento-card {
+      border-color: rgba(52, 62, 92, 0.5);
+    }
+
+    .bento-card.is-elevated {
+      box-shadow: var(--shadow-md);
+      border-radius: var(--radius-lg);
+    }
+
+    .section-eyebrow {
+      font-family: var(--font-family-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+    }
+
+    .section-heading {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--color-on-surface);
+      letter-spacing: -0.025em;
+      line-height: 1.25;
+    }
+
+    .section-description {
+      font-size: 13.5px;
+      color: var(--color-on-surface-variant);
+      line-height: 1.45;
+    }
+
+    /* Barra de Progresso Diário */
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background-color: var(--color-surface-container);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      padding: 1.5px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: var(--radius-full);
+      background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+      transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Grade de Métricas em 3 Colunas (Feedback Bento) */
+    .metrics-trio {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-xs);
+    }
+
+    .metric-pill-box {
+      background-color: var(--color-surface-container-low);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 4px;
+      border: 1px solid rgba(199, 196, 215, 0.2);
+    }
+
+    .metric-pill-val {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--color-on-surface);
+      font-family: var(--font-family-mono);
+      line-height: 1.1;
+    }
+
+    .metric-pill-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--color-on-surface-variant);
+    }
+
+    /* ==========================================================================
+       7. CHIPS FONÉTICOS IPA INTERATIVOS
+       ========================================================================== */
+    .ipa-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin: var(--space-xs) 0;
+    }
+
+    .ipa-word-chip {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: var(--color-surface-container);
+      border: 1px solid var(--color-outline-variant);
+      border-radius: var(--radius-sm);
+      padding: 5px 8px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      user-select: none;
+    }
+
+    .ipa-word-chip:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+      border-color: var(--color-primary);
+    }
+
+    .ipa-word-chip .word-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-on-surface);
+    }
+
+    .ipa-word-chip .ipa-text {
+      font-family: var(--font-family-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    /* Variantes por Precisão / Avaliação */
+    .ipa-word-chip.is-mastered {
+      background-color: var(--color-emerald-soft);
+      border-color: var(--color-emerald-border);
+    }
+    .ipa-word-chip.is-mastered .ipa-text {
+      color: var(--color-secondary);
+    }
+
+    .ipa-word-chip.is-refining {
+      background-color: var(--color-amber-soft);
+      border-color: var(--color-amber-border);
+    }
+    .ipa-word-chip.is-refining .ipa-text {
+      color: var(--color-tertiary);
+    }
+
+    .ipa-word-chip.is-critical {
+      background-color: var(--color-coral-soft);
+      border-color: var(--color-coral-border);
+      position: relative;
+    }
+    .ipa-word-chip.is-critical .ipa-text {
+      color: var(--color-error);
+    }
+
+    /* ==========================================================================
+       8. WAVEFORM CANVAS & VISUALIZADOR DE ÁUDIO
+       ========================================================================== */
+    .waveform-deck {
+      width: 100%;
+      height: 72px;
+      background: var(--color-surface-container-low);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(199, 196, 215, 0.3);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .waveform-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .waveform-status-overlay {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      font-family: var(--font-family-mono);
+      font-size: 9.5px;
+      font-weight: 600;
+      color: var(--color-on-surface-variant);
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(4px);
+      padding: 2px 6px;
+      border-radius: var(--radius-full);
+    }
+
+    [data-theme="dark"] .waveform-status-overlay {
+      background: rgba(14, 20, 36, 0.7);
+    }
+
+    /* ==========================================================================
+       9. BOTÃO PRINCIPAL DE GRAVAÇÃO / MICROFONE FLUTUANTE
+       ========================================================================== */
+    .mic-action-hub {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-xs);
+      margin: var(--space-sm) 0;
+    }
+
+    .btn-record-main {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-mic-idle);
+      position: relative;
+      transition: all var(--transition-bounce);
+    }
+
+    .btn-record-main:hover {
+      transform: scale(1.06);
+    }
+
+    .btn-record-main:active {
+      transform: scale(0.95);
+    }
+
+    .btn-record-main.is-recording {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: var(--shadow-mic-recording);
+      animation: micPulse 1.4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes micPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6), 0 0 20px rgba(239, 68, 68, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 16px rgba(239, 68, 68, 0), 0 0 32px rgba(239, 68, 68, 0.2);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 0 20px rgba(239, 68, 68, 0.4);
+      }
+    }
+
+    .mic-hint-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-on-surface-variant);
+      text-align: center;
+    }
+
+    /* ==========================================================================
+       10. STREAM DE DIÁLOGO / CHAT DE CONVERSAÇÃO COM IA
+       ========================================================================== */
+    .chat-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 4px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-bubble-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-width: 90%;
+    }
+
+    .chat-bubble-row.is-ai {
+      align-self: flex-start;
+    }
+
+    .chat-bubble-row.is-user {
+      align-self: flex-end;
+    }
+
+    .chat-sender-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-on-surface-variant);
+      padding: 0 4px;
+    }
+
+    .chat-bubble {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      line-height: 1.45;
+      position: relative;
+    }
+
+    .chat-bubble-row.is-ai .chat-bubble {
+      background-color: var(--color-surface-container-lowest);
+      color: var(--color-on-surface);
+      border-bottom-left-radius: 4px;
+      border: 1px solid rgba(199, 196, 215, 0.3);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .chat-bubble-row.is-user .chat-bubble {
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 12px rgba(70, 72, 212, 0.25);
+    }
+
+    .chat-audio-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 6px;
+      padding: 4px 10px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .chat-bubble-row.is-user .chat-audio-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    /* Chips de Resposta Rápida */
+    .quick-replies-tray {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 4px 0;
+      margin-top: var(--space-xs);
+    }
+
+    .quick-reply-pill {
+      background-color: var(--color-surface-container);
+      color: var(--color-primary);
+      border: 1px solid rgba(70, 72, 212, 0.2);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .quick-reply-pill:hover {
+      background-color: var(--color-primary-fixed);
+      transform: translateY(-1px);
+    }
+
+    /* ==========================================================================
+       11. BARRA DE NAVEGAÇÃO INFERIOR FIXA (BOTTOM NAV)
+       ========================================================================== */
+    .bottom-nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: 72px;
+      background: rgba(250, 248, 255, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(199, 196, 215, 0.3);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      align-items: center;
+      padding: 0 4px;
+      z-index: 40;
+      box-shadow: 0 -4px 20px rgba(19, 27, 46, 0.04);
+      transition: max-width var(--transition-normal);
+    }
+
+    .viewport-frame.is-expanded .bottom-nav-bar {
+      max-width: 1080px;
+    }
+
+    [data-theme="dark"] .bottom-nav-bar {
+      background: rgba(14, 20, 36, 0.92);
+      border-top: 1px solid rgba(52, 62, 92, 0.4);
+    }
+
+    .nav-tab-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      height: 100%;
+      color: var(--color-on-surface-variant);
+      transition: all var(--transition-fast);
+      position: relative;
+    }
+
+    .nav-tab-btn.is-active {
+      color: var(--color-primary);
+    }
+
+    .nav-tab-btn.is-active::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      width: 18px;
+      height: 3px;
+      border-radius: var(--radius-full);
+      background-color: var(--color-primary);
+    }
+
+    .nav-tab-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-tab-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    /* ==========================================================================
+       12. MODAIS & BOTTOM SHEETS
+       ========================================================================== */
+    .sheet-scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(19, 27, 46, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity var(--transition-normal);
+    }
+
+    .sheet-scrim.is-open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .bottom-sheet {
+      width: 100%;
+      max-width: 480px;
+      background-color: var(--color-surface-container-lowest);
+      border-top-left-radius: var(--radius-lg);
+      border-top-right-radius: var(--radius-lg);
+      padding: var(--space-md) var(--margin) var(--space-xl);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      transform: translateY(100%);
+      transition: transform var(--transition-bounce);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .sheet-scrim.is-open .bottom-sheet {
+      transform: translateY(0);
+    }
+
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background-color: var(--color-outline-variant);
+      border-radius: var(--radius-full);
+      align-self: center;
+      margin-bottom: var(--space-xs);
+    }
+
+    /* ==========================================================================
+       13. BOTÕES DE AÇÃO E UTILITÁRIOS
+       ========================================================================== */
+    .btn-action-primary {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+      color: #ffffff;
+      border-radius: var(--radius-full);
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(70, 72, 212, 0.3);
+      transition: all var(--transition-fast);
+    }
+
+    .btn-action-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(70, 72, 212, 0.4);
+    }
+
+    .btn-action-primary:active {
+      transform: translateY(1px);
+    }
+
+    .btn-action-secondary {
+      width: 100%;
+      height: 48px;
+      background-color: var(--color-surface-container);
+      color: var(--color-on-surface);
+      border-radius: var(--radius-full);
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-action-secondary:hover {
+      background-color: var(--color-surface-container-high);
+    }
+
+    /* Pílulas de Velocidade e Controles */
+    .pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      background-color: var(--color-surface-container);
+      font-family: var(--font-family-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-on-surface);
+      border: 1px solid rgba(199, 196, 215, 0.2);
+      transition: all var(--transition-fast);
+    }
+
+    .pill-btn:hover {
+      background-color: var(--color-surface-container-high);
+    }
+
+    /* Toast Notification */
+    .toast-msg {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      background: rgba(19, 27, 46, 0.95);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      z-index: 150;
+      opacity: 0;
+      pointer-events: none;
+      transition: all var(--transition-normal);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toast-msg.is-visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Suporte a preferência de movimento reduzido */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* Responsividade em Tablet & Desktop */
+    @media (min-width: 768px) {
+      .app-root {
+        padding: var(--space-lg) 0;
+      }
+      .viewport-frame {
+        min-height: calc(100vh - 2 * var(--space-lg));
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        border: 1px solid rgba(199, 196, 215, 0.3);
+      }
+      .bottom-nav-bar {
+        border-bottom-left-radius: var(--radius-lg);
+        border-bottom-right-radius: var(--radius-lg);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ROOT DA APLICAÇÃO -->
+  <div class="app-root">
+
+    <!-- MOLDURA DO DISPOSITIVO -->
+    <main class="viewport-frame" id="viewport-frame">
+
+      <!-- CABEÇALHO SUPERIOR -->
+      <header class="app-header">
+        <!-- Barra de Status Simulada -->
+        <div class="status-bar-sim" aria-hidden="true">
+          <span id="clock-display">09:41</span>
+          <div class="status-bar-icons">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+            <svg width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
+          </div>
+        </div>
+
+        <!-- Barra de Navegação de Marca -->
+        <div class="header-nav">
+          <div class="brand-group">
+            <div class="brand-logo-svg" aria-label="Logo Vocalis AI">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="22"></line>
+              </svg>
+            </div>
+            <div class="brand-titles">
+              <span class="brand-title">Vocalis AI</span>
+              <span class="brand-subtitle" id="current-screen-tag">Painel de Voz</span>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <!-- Badge de Ofensiva / Streak -->
+            <div class="streak-badge" title="Sua ofensiva diária">
+              <span>🔥</span>
+              <span id="header-streak-count">3 dias</span>
+            </div>
+
+            <!-- Alternador de Tema Claro/Escuro -->
+            <button class="btn-header-tool" id="btn-theme-toggle" aria-label="Alternar modo escuro" title="Tema Claro/Escuro">
+              <svg id="theme-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+
+            <!-- Alternador de Largura (Modo Mobile / Desktop Expandido) -->
+            <button class="btn-header-tool" id="btn-viewport-toggle" aria-label="Expandir visualização" title="Alternar largura da tela">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+            </button>
+
+            <!-- Avatar do Usuário -->
+            <div class="avatar-circle" title="Perfil do Usuário">C</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ÁREA DE TELAS PRINCIPAIS -->
+      <section class="main-viewport">
+
+        <!-- ====================================================================
+             TELA 1: DASHBOARD / INÍCIO
+             ==================================================================== -->
+        <article class="screen-panel is-active" id="screen-dashboard">
+          
+          <!-- Saudação e Resumo -->
+          <div class="bento-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <span class="section-eyebrow">Treinamento Acústico</span>
+                <h1 class="section-heading" style="margin-top: 2px;">Olá, Carlos!</h1>
+                <p class="section-description" style="margin-top: 4px;">
+                  Pronto para calibrar sua dicção e fluência fonética hoje?
+                </p>
+              </div>
+              <div style="width: 44px; height: 44px; border-radius: var(--radius-full); background: var(--color-surface-container); display: flex; align-items: center; justify-content: center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path></svg>
+              </div>
+            </div>
+
+            <!-- Card de Streak & Meta Diária -->
+            <div style="background-color: var(--color-surface-container-low); border-radius: var(--radius-md); padding: var(--space-md); display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 20px;">🔥</span>
+                  <div>
+                    <div style="font-weight: 700; font-size: 13.5px;">Ofensiva: 3 dias</div>
+                    <div style="font-size: 11px; font-weight: 600; color: var(--color-tertiary);">Ritmo acelerado de treino</div>
+                  </div>
+                </div>
+                <div style="font-family: var(--font-family-mono); font-weight: 700; font-size: 12px; color: var(--color-primary); background: var(--color-surface-container); padding: 4px 10px; border-radius: var(--radius-full);">
+                  <span id="daily-count">8</span>/<span id="daily-target">15</span> frases
+                </div>
+              </div>
+
+              <!-- Medidor de Progresso -->
+              <div class="progress-track">
+                <div class="progress-bar" id="dashboard-progress-fill" style="width: 53%;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--color-on-surface-variant);">
+                <span>53% da meta diária concluída</span>
+                <span style="font-weight: 600; color: var(--color-secondary);">Faltam 7 frases</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Frase em Destaque do Dia (Hero Card) -->
+          <div class="bento-card is-elevated">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="section-eyebrow">Frase Alvo do Dia</span>
+              <span class="pill-btn" style="color: var(--color-secondary); border-color: rgba(0, 108, 73, 0.2);">
+                <span>🎯</span> Nível Intermediário
+              </span>
+            </div>
+
+            <div>
+              <h2 style="font-size: 18px; font-weight: 700; line-height: 1.4; color: var(--color-on-surface);">
+                "The rhythm of his thought brought calm to his mind."
+              </h2>
+              <div style="font-family: var(--font-family-mono); font-size: 12px; color: var(--color-primary); margin-top: 6px; font-weight: 500;">
+                /ðə ˈrɪð.əm əv hɪz θɔːt brɔːt kɑːm tuː hɪz maɪnd/
+              </div>
+            </div>
+
+            <!-- Foco Fonético do Exercício -->
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <span class="pill-btn" style="background: var(--color-emerald-soft); color: var(--color-secondary);">
+                /θ/ thought (não-vozeado)
+              </span>
+              <span class="pill-btn" style="background: var(--color-amber-soft); color: var(--color-tertiary);">
+                /ð/ rhythm (vozeado)
+              </span>
+              <span class="pill-btn" style="background: var(--color-coral-soft); color: var(--color-error);">
+                /kɑːm/ calm (L mudo)
+              </span>
+            </div>
+
+            <!-- Ação Imediata -->
+            <button class="btn-action-primary" id="btn-start-hero-exercise">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Treinar Pronúncia Desta Frase
+            </button>
+          </div>
+
+          <!-- Módulos de Treino & Cenários -->
+          <div class="bento-card">
+            <span class="section-eyebrow">Trilhas de Aprendizado</span>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+
+              <div class="module-item-btn" style="padding: 12px; border-radius: var(--radius-sm); background: var(--color-surface-container-low); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="app.selectCategory('Trava-Línguas Acústicos')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 22px;">👅</span>
+                  <div>
+                    <div style="font-weight: 700; font-size: 13.5px;">Trava-Línguas Acústicos</div>
+                    <div style="font-size: 11px; color: var(--color-on-surface-variant);">Agilidade de língua e sons consonantais</div>
+                  </div>
+                </div>
+                <span class="pill-btn">8 lições</span>
+              </div>
+
+              <div class="module-item-btn" style="padding: 12px; border-radius: var(--radius-sm); background: var(--color-surface-container-low); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="app.selectCategory('Fluência Corporativa')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 22px;">💼</span>
+                  <div>
+                    <div style="font-weight: 700; font-size: 13.5px;">Fluência Corporativa</div>
+                    <div style="font-size: 11px; color: var(--color-on-surface-variant);">Vocabulário de reuniões e apresentações</div>
+                  </div>
+                </div>
+                <span class="pill-btn">12 lições</span>
+              </div>
+
+              <div class="module-item-btn" style="padding: 12px; border-radius: var(--radius-sm); background: var(--color-surface-container-low); display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="app.navigateTo('screen-conversation')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 22px;">✈️</span>
+                  <div>
+                    <div style="font-weight: 700; font-size: 13.5px;">Simulação de Diálogo com IA</div>
+                    <div style="font-size: 11px; color: var(--color-on-surface-variant);">Check-in de Aeroporto e Cafeteria</div>
+                  </div>
+                </div>
+                <span class="pill-btn" style="color: var(--color-primary);">Praticar</span>
+              </div>
+
+            </div>
+          </div>
+
+        </article>
+
+        <!-- ====================================================================
+             TELA 2: REPETIÇÃO GUIADA (SHADOWING & ANÁLISE FONÉTICA)
+             ==================================================================== -->
+        <article class="screen-panel" id="screen-guided">
+          
+          <!-- Cabeçalho de Navegação do Exercício -->
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="pill-btn" id="guided-exercise-count">Exercício 1 de 6</span>
+              <span class="pill-btn" id="guided-difficulty-badge" style="background: var(--color-secondary-fixed); color: var(--color-on-secondary-fixed);">Intermediário</span>
+            </div>
+            <!-- Seletor de Velocidade -->
+            <button class="pill-btn" id="btn-toggle-speed" title="Alternar velocidade de fala">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span id="speed-label">1.0x</span>
+            </button>
+          </div>
+
+          <!-- Card Central da Frase Alvo -->
+          <div class="bento-card is-elevated">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="section-eyebrow">Frase Alvo (Toque nos fonemas)</span>
+              <button class="pill-btn" id="btn-play-reference-audio" style="background: var(--color-primary-fixed); color: var(--color-on-primary-fixed);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                Ouvir Áudio
+              </button>
+            </div>
+
+            <!-- Frase em Destaque -->
+            <div id="guided-sentence-display" style="font-size: 20px; font-weight: 800; line-height: 1.4; color: var(--color-on-surface);">
+              The rhythm of his thought brought calm to his mind.
+            </div>
+
+            <!-- Chips Fonéticos IPA Clicáveis -->
+            <div class="ipa-container" id="guided-ipa-chips">
+              <!-- Gerados via JavaScript -->
+            </div>
+
+            <!-- Dica Articulatória -->
+            <div style="background: var(--color-surface-container-low); padding: 10px 12px; border-radius: var(--radius-sm); font-size: 12px; color: var(--color-on-surface-variant); display: flex; gap: 8px;">
+              <span>💡</span>
+              <span id="guided-articulation-tip">
+                Coloque a ponta da língua suavemente entre os dentes nos sons /θ/ e /ð/. Não deixe o "L" soar em "calm".
+              </span>
+            </div>
+          </div>
+
+          <!-- Visualizador de Ondas Sonoras (Waveform Deck) -->
+          <div class="waveform-deck">
+            <canvas class="waveform-canvas" id="waveform-canvas"></canvas>
+            <div class="waveform-status-overlay" id="waveform-status-tag">Espectro Acústico Pronto</div>
+          </div>
+
+          <!-- Hub de Gravação por Microfone -->
+          <div class="mic-action-hub">
+            <button class="btn-record-main" id="btn-mic-record" aria-label="Gravar pronúncia">
+              <svg id="mic-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="22"></line>
+              </svg>
+            </button>
+            <span class="mic-hint-text" id="mic-hint-label">Toque para gravar sua tentativa</span>
+            <div id="recording-live-transcript" style="font-family: var(--font-family-mono); font-size: 11px; color: var(--color-primary); min-height: 16px;"></div>
+          </div>
+
+          <!-- Ações Auxiliares -->
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-action-secondary" id="btn-next-exercise-guided">
+              Próxima Frase do Catálogo
+            </button>
+          </div>
+
+        </article>
+
+        <!-- ====================================================================
+             TELA 3: FEEDBACK FONÉTICO DETALHADO (AVALIAÇÃO & MÉTRICAS)
+             ==================================================================== -->
+        <article class="screen-panel" id="screen-feedback">
+          
+          <!-- Banner Superior de Pontuação Circular (Score Ring) -->
+          <div class="bento-card is-elevated" style="flex-direction: row; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <!-- Anel Circular SVG com Score -->
+              <div style="position: relative; width: 68px; height: 68px; display: flex; align-items: center; justify-content: center;">
+                <svg width="68" height="68" viewBox="0 0 48 48" style="transform: rotate(-90deg);">
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="var(--color-surface-container)" stroke-width="4.5"></circle>
+                  <circle id="score-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--color-secondary)" stroke-width="4.5" stroke-dasharray="125.6" stroke-dashoffset="20.1" stroke-linecap="round" style="transition: stroke-dashoffset 1s ease-out;"></circle>
+                </svg>
+                <div style="position: absolute; display: flex; flex-direction: column; align-items: center;">
+                  <span id="score-overall-num" style="font-size: 19px; font-weight: 800; font-family: var(--font-family-mono); line-height: 1;">84</span>
+                  <span style="font-size: 9px; font-weight: 700; color: var(--color-on-surface-variant);">%</span>
+                </div>
+              </div>
+
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 18px; font-weight: 800; color: var(--color-secondary);" id="feedback-headline">Great Job!</span>
+                  <span>🎉</span>
+                </div>
+                <p style="font-size: 12px; color: var(--color-on-surface-variant); margin-top: 2px;">
+                  Excelente articulação e entonação.
+                </p>
+              </div>
+            </div>
+
+            <!-- Botão Reproduzir Áudio Gravado -->
+            <button class="pill-btn" id="btn-replay-user-attempt" style="height: 38px; border-radius: var(--radius-full); background: var(--color-primary-fixed); color: var(--color-on-primary-fixed);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Sua Voz
+            </button>
+          </div>
+
+          <!-- Grade de Métricas Bento em 3 Colunas -->
+          <div class="metrics-trio">
+            <div class="metric-pill-box">
+              <span class="metric-pill-val" id="metric-accuracy" style="color: var(--color-secondary);">88%</span>
+              <span class="metric-pill-label">Precisão Fonética</span>
+            </div>
+            <div class="metric-pill-box">
+              <span class="metric-pill-val" id="metric-fluency" style="color: var(--color-tertiary);">79%</span>
+              <span class="metric-pill-label">Ritmo & Fluência</span>
+            </div>
+            <div class="metric-pill-box">
+              <span class="metric-pill-val" id="metric-intonation" style="color: var(--color-primary);">85%</span>
+              <span class="metric-pill-label">Entonação (Pitch)</span>
+            </div>
+          </div>
+
+          <!-- Diagnóstico Palavra por Palavra -->
+          <div class="bento-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="section-eyebrow">Diagnóstico Acústico</span>
+              <span style="font-size: 11px; color: var(--color-on-surface-variant);">Toque para ouvir fonema</span>
+            </div>
+
+            <div class="ipa-container" id="feedback-words-breakdown">
+              <!-- Gerado dinamicamente com status verde/amarelo/vermelho -->
+            </div>
+          </div>
+
+          <!-- Recomendações e Plano Articulatório -->
+          <div class="bento-card">
+            <span class="section-eyebrow">Dica Fonoaudiológica</span>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+              <span style="font-size: 24px;">🎯</span>
+              <div>
+                <h4 style="font-size: 14px; font-weight: 700; color: var(--color-on-surface);" id="feedback-tip-title">
+                  Atenção ao som de /θ/ em "thought"
+                </h4>
+                <p style="font-size: 12.5px; color: var(--color-on-surface-variant); margin-top: 4px; line-height: 1.45;" id="feedback-tip-desc">
+                  Evite substituir o som de /θ/ pelo som de "f" ou "s". Apoie a língua levemente nos incisivos superiores e expulse ar contínuo sem vibração vocal.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botões de Ação Final -->
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn-action-primary" id="btn-feedback-retry">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+              Tentar Novamente Esta Frase
+            </button>
+            <button class="btn-action-secondary" id="btn-feedback-advance">
+              Avançar para Próxima Frase
+            </button>
+          </div>
+
+        </article>
+
+        <!-- ====================================================================
+             TELA 4: CONVERSAÇÃO LIVRE COM IA (CENÁRIOS & CHAT REALISTA)
+             ==================================================================== -->
+        <article class="screen-panel" id="screen-conversation">
+          
+          <!-- Seletor de Cenários de Conversa -->
+          <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;">
+            <button class="pill-btn" id="scenario-tab-airport" style="background: var(--color-primary-fixed); color: var(--color-on-primary-fixed);" onclick="app.switchScenario('airport')">
+              ✈️ No Aeroporto
+            </button>
+            <button class="pill-btn" id="scenario-tab-coffee" onclick="app.switchScenario('coffee')">
+              ☕ Cafeteria em NYC
+            </button>
+            <button class="pill-btn" id="scenario-tab-interview" onclick="app.switchScenario('interview')">
+              💼 Entrevista de Emprego
+            </button>
+          </div>
+
+          <!-- Card de Contexto Ativo -->
+          <div class="bento-card" style="padding: var(--space-md); gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="section-eyebrow" id="scenario-active-title">✈️ At the Airport: Checking In</span>
+              <span class="pill-btn" style="background: var(--color-emerald-soft); color: var(--color-secondary); font-size: 10px;">
+                ● Tutor Ao Vivo
+              </span>
+            </div>
+            <p style="font-size: 12px; color: var(--color-on-surface-variant);" id="scenario-active-desc">
+              Você está no balcão de check-in despachando sua bagagem e confirmando seu assento.
+            </p>
+          </div>
+
+          <!-- Feed do Diálogo / Histórico de Chat -->
+          <div class="chat-timeline" id="chat-messages-container">
+            <!-- Mensagens inseridas dinamicamente -->
+          </div>
+
+          <!-- Sugestões de Respostas Rápidas (Chips de Auxílio) -->
+          <div>
+            <span style="font-size: 11px; font-weight: 600; color: var(--color-on-surface-variant);">Sugestões de fala:</span>
+            <div class="quick-replies-tray" id="chat-suggestions-tray">
+              <!-- Geradas dinamicamente -->
+            </div>
+          </div>
+
+          <!-- Barra de Interação por Voz / Entrada -->
+          <div class="bento-card" style="padding: 10px 14px; flex-direction: row; align-items: center; gap: 8px;">
+            <input type="text" id="chat-text-input" placeholder="Digite ou toque no microfone para falar..." style="flex: 1; background: transparent; font-size: 13.5px; color: var(--color-on-surface);">
+            
+            <button class="btn-header-tool" id="btn-chat-mic" style="background: var(--color-primary); color: #ffffff;" title="Falar sua resposta">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+            </button>
+
+            <button class="btn-header-tool" id="btn-chat-send" title="Enviar texto">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </div>
+
+        </article>
+
+        <!-- ====================================================================
+             TELA 5: FRASE PERSONALIZADA (CUSTOM PHRASE TRAINER)
+             ==================================================================== -->
+        <article class="screen-panel" id="screen-custom">
+          
+          <div class="bento-card">
+            <span class="section-eyebrow">Treino Customizado</span>
+            <h2 class="section-heading" style="font-size: 20px;">Digite sua própria frase</h2>
+            <p class="section-description">
+              Insira qualquer frase em inglês para gerar transcrição fonética IPA imediata, ouvir o modelo nativo e avaliar sua fala.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <textarea id="custom-phrase-input" rows="3" placeholder="Ex.: I would like an iced americano with oat milk, please." style="width: 100%; padding: 12px; border-radius: var(--radius-sm); background: var(--color-surface-container-low); color: var(--color-on-surface); font-size: 14px; border: 1px solid var(--color-outline-variant); resize: none;"></textarea>
+              <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--color-on-surface-variant);">
+                <span>Limite: 200 caracteres</span>
+                <button style="color: var(--color-primary); font-weight: 600;" onclick="app.fillRandomCustomPhrase()">Inserir Frase de Exemplo</button>
+              </div>
+            </div>
+
+            <button class="btn-action-primary" id="btn-generate-custom-training">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Calibrar e Iniciar Treino
+            </button>
+          </div>
+
+          <!-- Histórico de Frases Recentes -->
+          <div class="bento-card">
+            <span class="section-eyebrow">Frases Salvas Recentemente</span>
+            <div id="recent-custom-phrases-list" style="display: flex; flex-direction: column; gap: 6px;">
+              <!-- Preenchido via JS -->
+            </div>
+          </div>
+
+        </article>
+
+      </section>
+
+      <!-- BARRA DE NAVEGAÇÃO INFERIOR FIXA (BOTTOM NAV) -->
+      <nav class="bottom-nav-bar" aria-label="Navegação Principal">
+        <button class="nav-tab-btn is-active" id="nav-btn-dashboard" onclick="app.navigateTo('screen-dashboard')">
+          <div class="nav-tab-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          </div>
+          <span class="nav-tab-label">Início</span>
+        </button>
+
+        <button class="nav-tab-btn" id="nav-btn-guided" onclick="app.navigateTo('screen-guided')">
+          <div class="nav-tab-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+          </div>
+          <span class="nav-tab-label">Prática</span>
+        </button>
+
+        <button class="nav-tab-btn" id="nav-btn-conversation" onclick="app.navigateTo('screen-conversation')">
+          <div class="nav-tab-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          </div>
+          <span class="nav-tab-label">Diálogo IA</span>
+        </button>
+
+        <button class="nav-tab-btn" id="nav-btn-custom" onclick="app.navigateTo('screen-custom')">
+          <div class="nav-tab-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </div>
+          <span class="nav-tab-label">Própria</span>
+        </button>
+      </nav>
+
+    </main>
+  </div>
+
+  <!-- BOTTOM SHEET / MODAL DE DICA FONÉTICA ARTICULATÓRIA -->
+  <div class="sheet-scrim" id="phoneme-sheet-scrim" onclick="app.closePhonemeSheet(event)">
+    <div class="bottom-sheet" id="phoneme-sheet">
+      <div class="sheet-handle"></div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <span class="section-eyebrow">Guia Articulatório</span>
+          <h3 style="font-size: 22px; font-weight: 800; font-family: var(--font-family-mono); color: var(--color-primary);" id="sheet-ipa-symbol">
+            /θ/
+          </h3>
+          <span style="font-size: 13px; font-weight: 600; color: var(--color-on-surface);" id="sheet-word-target">
+            Palavra: "thought"
+          </span>
+        </div>
+        <button class="btn-header-tool" onclick="app.speakCurrentSheetWord()" title="Ouvir pronúncia isolada">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        </button>
+      </div>
+
+      <!-- Diagrama de Articulação / Instrução Anatômica -->
+      <div style="background: var(--color-surface-container-low); padding: 14px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">👅</span>
+          <strong style="font-size: 13px;">Posicionamento Anatômico</strong>
+        </div>
+        <p style="font-size: 12.5px; line-height: 1.5; color: var(--color-on-surface-variant);" id="sheet-phoneme-anatomy">
+          Apoie a ponta da língua suavemente sob os dentes incisivos superiores. Permita que uma corrente de ar contínua flua sem bloquear o canal.
+        </p>
+      </div>
+
+      <div style="background: var(--color-surface-container-low); padding: 14px; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">⚠️</span>
+          <strong style="font-size: 13px;">Erro Frequente de Brasileiros</strong>
+        </div>
+        <p style="font-size: 12.5px; line-height: 1.5; color: var(--color-on-surface-variant);" id="sheet-phoneme-mistake">
+          Substituir /θ/ pelo som de 'S' (thought vira "sought") ou 'F'. Lembre-se que as cordas vocais não devem vibrar.
+        </p>
+      </div>
+
+      <button class="btn-action-primary" onclick="app.closePhonemeSheet()">
+        Entendi, Voltar ao Treino
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST DE NOTIFICAÇÃO -->
+  <div class="toast-msg" id="toast-notification">
+    <span id="toast-text">Ação executada com sucesso!</span>
+  </div>
+
+  <!-- ==========================================================================
+       14. JAVASCRIPT PURO INLINE (LOGIC & STATE ENGINE)
+       ========================================================================== -->
+  <script>
+    /**
+     * Catálogo de Exercícios Estruturados (Design Tokens & Pronunciation Data)
+     */
+    const EXERCISES_DATABASE = [
+      {
+        id: 'ex-1',
+        sentence: 'The rhythm of his thought brought calm to his mind.',
+        ipa: '/ðə ˈrɪð.əm əv hɪz θɔːt brɔːt kɑːm tuː hɪz maɪnd/',
+        difficulty: 'Intermediário',
+        category: 'Trava-Línguas Acústicos',
+        tip: 'Coloque a ponta da língua suavemente entre os dentes nos sons /θ/ e /ð/. O "L" em "calm" é completamente mudo.',
+        words: [
+          { text: 'The', ipa: '/ðə/', tip: 'TH vozeado suave /ð/.', score: 95 },
+          { text: 'rhythm', ipa: '/ˈrɪð.əm/', tip: 'Acento na primeira sílaba com som /ð/ no meio.', score: 86 },
+          { text: 'of', ipa: '/əv/', tip: 'O som da letra F soa como um V leve /v/.', score: 98 },
+          { text: 'his', ipa: '/hɪz/', tip: 'H aspirado com som final de Z vibrante /z/.', score: 92 },
+          { text: 'thought', ipa: '/θɔːt/', tip: 'TH não-vozeado. Sopre ar entre os dentes sem vibrar.', score: 68 },
+          { text: 'brought', ipa: '/brɔːt/', tip: 'Vogal aberta /ɔː/ sem pronunciar o G nem o H.', score: 88 },
+          { text: 'calm', ipa: '/kɑːm/', tip: 'O "L" é mudo! Soa apenas como "k-ahm".', score: 72 },
+          { text: 'to', ipa: '/tuː/', tip: 'T aspirado nítido.', score: 96 },
+          { text: 'his', ipa: '/hɪz/', tip: 'H aspirado com som de Z.', score: 94 },
+          { text: 'mind', ipa: '/maɪnd/', tip: 'Ditongo /aɪ/ fechando com D claro.', score: 91 }
+        ]
+      },
+      {
+        id: 'ex-2',
+        sentence: 'Peter Piper picked a peck of pickled peppers.',
+        ipa: '/ˈpiː.t̬ɚ ˈpaɪ.pɚ pɪkt ə pek əv ˈpɪk.əld ˈpep.ɚz/',
+        difficulty: 'Avançado',
+        category: 'Trava-Línguas Acústicos',
+        tip: 'Cada "P" inicial necessita de uma explosão controlada de ar (consoante oclusiva aspirada).',
+        words: [
+          { text: 'Peter', ipa: '/ˈpiː.t̬ɚ/', tip: 'P aspirado com flap T americano.', score: 82 },
+          { text: 'Piper', ipa: '/ˈpaɪ.pɚ/', tip: 'Ditongo /aɪ/ e final em schwa + R.', score: 80 },
+          { text: 'picked', ipa: '/pɪkt/', tip: 'Terminação em T nítido.', score: 88 },
+          { text: 'a', ipa: '/ə/', tip: 'Schwa neutro curto.', score: 98 },
+          { text: 'peck', ipa: '/pek/', tip: 'Vogal curta /e/.', score: 92 },
+          { text: 'of', ipa: '/əv/', tip: 'Som de V leve.', score: 95 },
+          { text: 'pickled', ipa: '/ˈpɪk.əld/', tip: 'Terminação em D suave.', score: 76 },
+          { text: 'peppers', ipa: '/ˈpep.ɚz/', tip: 'P aspirado com som final de Z.', score: 84 }
+        ]
+      },
+      {
+        id: 'ex-3',
+        sentence: 'Could we schedule a quick sync for next Wednesday?',
+        ipa: '/kʊd wiː ˈsked.juːl ə kwɪk sɪŋk fɔːr nekst ˈwenz.deɪ/',
+        difficulty: 'Intermediário',
+        category: 'Fluência Corporativa',
+        tip: '"Schedule" em inglês americano soa como "SKED-yool". O "D" em "Wednesday" é mudo ("WENZ-day").',
+        words: [
+          { text: 'Could', ipa: '/kʊd/', tip: 'O L é totalmente mudo.', score: 94 },
+          { text: 'we', ipa: '/wiː/', tip: 'Vogal longa /iː/.', score: 96 },
+          { text: 'schedule', ipa: '/ˈsked.juːl/', tip: 'SKED-yool com acento no início.', score: 85 },
+          { text: 'a', ipa: '/ə/', tip: 'Schwa relaxado.', score: 98 },
+          { text: 'quick', ipa: '/kwɪk/', tip: 'Som inicial de /kw/.', score: 90 },
+          { text: 'sync', ipa: '/sɪŋk/', tip: 'N velar /ŋ/ seguido de K.', score: 87 },
+          { text: 'for', ipa: '/fɔːr/', tip: 'Vogal aberta com R retroflexo.', score: 94 },
+          { text: 'next', ipa: '/nekst/', tip: 'Grupo consonantal /kst/.', score: 89 },
+          { text: 'Wednesday', ipa: '/ˈwenz.deɪ/', tip: 'D mudo: fale "Wenz-day".', score: 78 }
+        ]
+      },
+      {
+        id: 'ex-4',
+        sentence: 'I would like an iced americano with oat milk, please.',
+        ipa: '/aɪ wʊd laɪk ən aɪst əˌmer.ɪˈkɑː.noʊ wɪð oʊt mɪlk pliːz/',
+        difficulty: 'Básico',
+        category: 'Cafeteria em NYC',
+        tip: 'Conecte "iced" e "americano". "Milk" possui som de dark L no final.',
+        words: [
+          { text: 'I', ipa: '/aɪ/', tip: 'Ditongo nítido.', score: 98 },
+          { text: 'would', ipa: '/wʊd/', tip: 'L mudo.', score: 96 },
+          { text: 'like', ipa: '/laɪk/', tip: 'Ditongo /aɪ/ com K suave.', score: 94 },
+          { text: 'an', ipa: '/ən/', tip: 'Ligação fluida com a próxima palavra.', score: 92 },
+          { text: 'iced', ipa: '/aɪst/', tip: 'Terminação em T pronunciado.', score: 86 },
+          { text: 'americano', ipa: '/əˌmer.ɪˈkɑː.noʊ/', tip: 'Acento na sílaba "CA".', score: 89 },
+          { text: 'with', ipa: '/wɪð/', tip: 'TH vozeado suave.', score: 84 },
+          { text: 'oat', ipa: '/oʊt/', tip: 'Ditongo /oʊ/ com T final.', score: 90 },
+          { text: 'milk', ipa: '/mɪlk/', tip: 'Dark L sem transformar em "u".', score: 79 },
+          { text: 'please', ipa: '/pliːz/', tip: 'Finalize com Z vibrante.', score: 95 }
+        ]
+      }
+    ];
+
+    /**
+     * Diálogos Interativos com IA para Simulação de Cenários
+     */
+    const SCENARIOS_DATABASE = {
+      airport: {
+        title: '✈️ At the Airport: Checking In',
+        desc: 'Você está no balcão de check-in despachando sua bagagem e confirmando seu assento.',
+        initialMessages: [
+          {
+            id: 'm1',
+            sender: 'ai',
+            name: 'Emma (Airport Attendant)',
+            text: 'Hello! Welcome to SkyWays. Where are you flying to today, and may I have your passport?',
+            time: '09:41'
+          }
+        ],
+        suggestions: [
+          'Good morning! I am flying to London. Here is my passport.',
+          'Hello, I have a flight to New York. Can I get a window seat, please?',
+          'Hi! Here is my passport and boarding pass.'
+        ],
+        responses: {
+          'london': 'Great! Flight 402 to London Heathrow is on schedule. Are you checking any bags today?',
+          'window': 'Certainly! I found a window seat in row 14 for you. Do you have any luggage to check in?',
+          'default': 'Thank you very much. Please place your luggage on the scale so we can verify the weight.'
+        }
+      },
+      coffee: {
+        title: '☕ Coffee Shop in NYC',
+        desc: 'Você está em um café de Nova York pedindo sua bebida favorita matinal.',
+        initialMessages: [
+          {
+            id: 'm1',
+            sender: 'ai',
+            name: 'Alex (Barista)',
+            text: 'Hey there! What can I get started for you today?',
+            time: '09:41'
+          }
+        ],
+        suggestions: [
+          'Can I get a large iced latte with oat milk, please?',
+          'I would like an espresso and a blueberry muffin.',
+          'Just a hot black coffee to go, thanks!'
+        ],
+        responses: {
+          'latte': 'Awesome choice! Large iced latte with oat milk. Would you like any syrup or flavor in that?',
+          'muffin': 'Sure thing! Do you want me to warm up the muffin for you?',
+          'default': 'Got it! That will be ready at the counter in just a couple of minutes.'
+        }
+      },
+      interview: {
+        title: '💼 Job Interview in Tech',
+        desc: 'Entrevista com recrutador internacional para uma vaga remota global.',
+        initialMessages: [
+          {
+            id: 'm1',
+            sender: 'ai',
+            name: 'Sarah (Hiring Manager)',
+            text: 'Thanks for joining us today! Could you briefly tell me about your background and recent projects?',
+            time: '09:41'
+          }
+        ],
+        suggestions: [
+          'Sure! I have five years of experience as a software developer.',
+          'Thank you for the opportunity. I specialize in front-end architecture.',
+          'Hello! I recently led the engineering of a mobile voice training app.'
+        ],
+        responses: {
+          'experience': 'That sounds impressive. How do you usually handle tight deadlines and team collaboration?',
+          'architecture': 'Excellent. What architectural patterns do you prioritize for high-performance applications?',
+          'default': 'Thank you for sharing that context. What excited you the most about joining our global team?'
+        }
+      }
+    };
+
+    /**
+     * Dicionário Fonético IPA Rápido
+     */
+    const PHONEME_ANATOMY_GUIDE = {
+      '/θ/': {
+        anatomy: 'Ponta da língua repousando entre os dentes incisivos superiores. Saída de ar suave e sem vibração das cordas vocais (surdo).',
+        mistake: 'Falar "f" ou "s" em vez do sopro interdental.',
+        example: 'thought, think, fourth'
+      },
+      '/ð/': {
+        anatomy: 'Mesma posição entre os dentes do som /θ/, porém com ativação vibrante contínua das cordas vocais (sonoro).',
+        mistake: 'Falar "d" oclusivo em vez do fricativo interdental contínuo.',
+        example: 'the, this, rhythm'
+      },
+      '/kɑːm/': {
+        anatomy: 'A letra "L" é absolutamente muda. Pronuncie a vogal aberta posterior /ɑː/ seguida diretamente pelo bilabial /m/.',
+        mistake: 'Pronunciar "cál-mi" ou tentar forçar o L.',
+        example: 'calm, palm, balm'
+      },
+      '/p/': {
+        anatomy: 'Lábios firmemente ocluídos com liberação súbita em explosão de ar expiratório (consoante plosiva aspirada).',
+        mistake: 'Fazer o P suave do português sem expulsão audível de ar.',
+        example: 'peter, piper, peck'
+      },
+      'default': {
+        anatomy: 'Mantenha mandíbula relaxada, lábios ajustados e preserve a duração correta de vogais longas contra vogais curtas.',
+        mistake: 'Encurtar ditongos e vogais longas.',
+        example: 'general practice'
+      }
+    };
+
+    /**
+     * Estado Global da Aplicação
+     */
+    class VocalisApp {
+      constructor() {
+        this.currentScreen = 'screen-dashboard';
+        this.currentExerciseIndex = 0;
+        this.currentSpeed = 1.0;
+        this.activeScenarioKey = 'airport';
+        this.isRecording = false;
+        this.isDarkTheme = false;
+        this.isExpandedViewport = false;
+        this.audioContext = null;
+        this.analyser = null;
+        this.mediaStream = null;
+        this.animationFrameId = null;
+        this.recognition = null;
+        this.lastRecordedTranscript = '';
+        this.recentCustomPhrases = [
+          'Specific statistical indicators demonstrate consistent global progress.',
+          'Although thoroughly exhausted, the researchers persevered.',
+          'Could we schedule a quick sync for next Wednesday?'
+        ];
+
+        this.initDOM();
+        this.initClock();
+        this.initCanvas();
+        this.initSpeechRecognition();
+        this.loadExercise(0);
+        this.renderCustomPhrasesList();
+        this.switchScenario('airport');
+      }
+
+      initDOM() {
+        // Alternador de tema
+        document.getElementById('btn-theme-toggle').addEventListener('click', () => this.toggleTheme());
+
+        // Alternador de largura (Mobile vs Expandido)
+        document.getElementById('btn-viewport-toggle').addEventListener('click', () => this.toggleViewportWidth());
+
+        // Botão hero de início de treino
+        document.getElementById('btn-start-hero-exercise').addEventListener('click', () => {
+          this.loadExercise(0);
+          this.navigateTo('screen-guided');
+        });
+
+        // Controles da tela guiada
+        document.getElementById('btn-toggle-speed').addEventListener('click', () => this.togglePlaybackSpeed());
+        document.getElementById('btn-play-reference-audio').addEventListener('click', () => this.playCurrentReferenceAudio());
+        document.getElementById('btn-mic-record').addEventListener('click', () => this.toggleRecording());
+        document.getElementById('btn-next-exercise-guided').addEventListener('click', () => this.nextExercise());
+
+        // Controles da tela de feedback
+        document.getElementById('btn-feedback-retry').addEventListener('click', () => this.navigateTo('screen-guided'));
+        document.getElementById('btn-feedback-advance').addEventListener('click', () => {
+          this.nextExercise();
+          this.navigateTo('screen-guided');
+        });
+        document.getElementById('btn-replay-user-attempt').addEventListener('click', () => {
+          this.speakText(this.lastRecordedTranscript || EXERCISES_DATABASE[this.currentExerciseIndex].sentence, 0.95);
+        });
+
+        // Controles de diálogo
+        document.getElementById('btn-chat-send').addEventListener('click', () => this.sendChatMessage());
+        document.getElementById('chat-text-input').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') this.sendChatMessage();
+        });
+        document.getElementById('btn-chat-mic').addEventListener('click', () => this.recordChatVoice());
+
+        // Controles de frase customizada
+        document.getElementById('btn-generate-custom-training').addEventListener('click', () => this.startCustomTraining());
+      }
+
+      initClock() {
+        const updateClock = () => {
+          const now = new Date();
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          const el = document.getElementById('clock-display');
+          if (el) el.textContent = `${hours}:${minutes}`;
+        };
+        updateClock();
+        setInterval(updateClock, 30000);
+      }
+
+      toggleTheme() {
+        this.isDarkTheme = !this.isDarkTheme;
+        if (this.isDarkTheme) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+        this.showToast(this.isDarkTheme ? 'Modo Escuro Ativado' : 'Modo Claro Ativado');
+      }
+
+      toggleViewportWidth() {
+        this.isExpandedViewport = !this.isExpandedViewport;
+        const frame = document.getElementById('viewport-frame');
+        if (this.isExpandedViewport) {
+          frame.classList.add('is-expanded');
+          this.showToast('Visualização Expandida (Tablet / Desktop)');
+        } else {
+          frame.classList.remove('is-expanded');
+          this.showToast('Visualização Mobile (Compact)');
+        }
+      }
+
+      navigateTo(screenId) {
+        document.querySelectorAll('.screen-panel').forEach(panel => panel.classList.remove('is-active'));
+        const target = document.getElementById(screenId);
+        if (target) {
+          target.classList.add('is-active');
+          this.currentScreen = screenId;
+        }
+
+        // Atualizar aba ativa na bottom nav
+        const tabMap = {
+          'screen-dashboard': 'nav-btn-dashboard',
+          'screen-guided': 'nav-btn-guided',
+          'screen-feedback': 'nav-btn-guided',
+          'screen-conversation': 'nav-btn-conversation',
+          'screen-custom': 'nav-btn-custom'
+        };
+
+        document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('is-active'));
+        const activeNavBtn = document.getElementById(tabMap[screenId]);
+        if (activeNavBtn) activeNavBtn.classList.add('is-active');
+
+        // Atualizar título do cabeçalho
+        const titlesMap = {
+          'screen-dashboard': 'Painel de Voz',
+          'screen-guided': 'Treino de Shadowing',
+          'screen-feedback': 'Diagnóstico Fonético',
+          'screen-conversation': 'Conversa com IA',
+          'screen-custom': 'Frase Personalizada'
+        };
+        const titleEl = document.getElementById('current-screen-tag');
+        if (titleEl) titleEl.textContent = titlesMap[screenId] || 'Vocalis';
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      loadExercise(index) {
+        this.currentExerciseIndex = index % EXERCISES_DATABASE.length;
+        const ex = EXERCISES_DATABASE[this.currentExerciseIndex];
+
+        document.getElementById('guided-exercise-count').textContent = `Exercício ${this.currentExerciseIndex + 1} de ${EXERCISES_DATABASE.length}`;
+        document.getElementById('guided-difficulty-badge').textContent = ex.difficulty;
+        document.getElementById('guided-sentence-display').textContent = ex.sentence;
+        document.getElementById('guided-articulation-tip').textContent = ex.tip;
+
+        // Renderizar chips IPA interativos
+        const ipaContainer = document.getElementById('guided-ipa-chips');
+        ipaContainer.innerHTML = '';
+
+        ex.words.forEach(w => {
+          const chip = document.createElement('div');
+          let scoreClass = 'is-mastered';
+          if (w.score < 75) scoreClass = 'is-critical';
+          else if (w.score < 85) scoreClass = 'is-refining';
+
+          chip.className = `ipa-word-chip ${scoreClass}`;
+          chip.innerHTML = `
+            <span class="word-text">${w.text}</span>
+            <span class="ipa-text">${w.ipa}</span>
+          `;
+          chip.onclick = () => this.openPhonemeSheet(w);
+          ipaContainer.appendChild(chip);
+        });
+      }
+
+      nextExercise() {
+        this.loadExercise(this.currentExerciseIndex + 1);
+        this.showToast('Carregado próximo exercício de treino');
+      }
+
+      selectCategory(catName) {
+        const foundIndex = EXERCISES_DATABASE.findIndex(e => e.category === catName);
+        if (foundIndex !== -1) {
+          this.loadExercise(foundIndex);
+        }
+        this.navigateTo('screen-guided');
+      }
+
+      togglePlaybackSpeed() {
+        this.currentSpeed = this.currentSpeed === 1.0 ? 0.75 : 1.0;
+        document.getElementById('speed-label').textContent = `${this.currentSpeed.toFixed(2).replace('.00', '.0')}x`;
+        this.showToast(`Velocidade ajustada para ${this.currentSpeed}x`);
+      }
+
+      speakText(text, rate = null) {
+        if (!('speechSynthesis' in window)) {
+          this.showToast('Síntese de voz não suportada neste navegador.');
+          return;
+        }
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = rate || this.currentSpeed;
+        utterance.pitch = 1.0;
+
+        // Animação no canvas durante a reprodução
+        this.triggerCanvasWave(3000);
+
+        window.speechSynthesis.speak(utterance);
+      }
+
+      playCurrentReferenceAudio() {
+        const ex = EXERCISES_DATABASE[this.currentExerciseIndex];
+        this.speakText(ex.sentence);
+        this.showToast('Reproduzindo áudio nativo de referência...');
+      }
+
+      speakWordIsolated(word) {
+        this.speakText(word, 0.8);
+      }
+
+      /**
+       * Reconhecimento de Fala & Gravação
+       */
+      initSpeechRecognition() {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRec) {
+          this.recognition = new SpeechRec();
+          this.recognition.lang = 'en-US';
+          this.recognition.interimResults = true;
+          this.recognition.continuous = false;
+
+          this.recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = 0; i < event.results.length; i++) {
+              transcript += event.results[i][0].transcript;
+            }
+            this.lastRecordedTranscript = transcript;
+            const transcriptEl = document.getElementById('recording-live-transcript');
+            if (transcriptEl) transcriptEl.textContent = `"${transcript}"`;
+          };
+
+          this.recognition.onerror = () => {
+            this.stopRecording(false);
+          };
+
+          this.recognition.onend = () => {
+            if (this.isRecording) {
+              this.stopRecording(true);
+            }
+          };
+        }
+      }
+
+      async toggleRecording() {
+        if (!this.isRecording) {
+          this.startRecording();
+        } else {
+          this.stopRecording(true);
+        }
+      }
+
+      async startRecording() {
+        this.isRecording = true;
+        this.lastRecordedTranscript = '';
+        const btn = document.getElementById('btn-mic-record');
+        const hint = document.getElementById('mic-hint-label');
+        const overlay = document.getElementById('waveform-status-tag');
+        const transcriptEl = document.getElementById('recording-live-transcript');
+
+        btn.classList.add('is-recording');
+        hint.textContent = 'Gravando sua voz... Toque para finalizar';
+        hint.style.color = 'var(--color-error)';
+        overlay.textContent = 'Microfone Ao Vivo • Capturando';
+        transcriptEl.textContent = 'Ouvindo...';
+
+        // Ativar Web Audio API para análise da forma de onda
+        try {
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            this.audioContext = new AudioCtx();
+            const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 64;
+            source.connect(this.analyser);
+            this.startLiveCanvasLoop();
+          }
+        } catch {
+          // Fallback para animação sintética suave
+          this.startSyntheticWave();
+        }
+
+        if (this.recognition) {
+          try {
+            this.recognition.start();
+          } catch {
+            // Ignorar erro se já iniciado
+          }
+        }
+      }
+
+      stopRecording(processResults = true) {
+        this.isRecording = false;
+        const btn = document.getElementById('btn-mic-record');
+        const hint = document.getElementById('mic-hint-label');
+        const overlay = document.getElementById('waveform-status-tag');
+
+        btn.classList.remove('is-recording');
+        hint.textContent = 'Processando análise acústica...';
+        hint.style.color = 'var(--color-on-surface-variant)';
+        overlay.textContent = 'Processando Espectro';
+
+        if (this.recognition) {
+          try { this.recognition.stop(); } catch {}
+        }
+
+        if (this.mediaStream) {
+          this.mediaStream.getTracks().forEach(t => t.stop());
+          this.mediaStream = null;
+        }
+
+        if (this.animationFrameId) {
+          cancelAnimationFrame(this.animationFrameId);
+          this.animationFrameId = null;
+        }
+
+        setTimeout(() => {
+          hint.textContent = 'Toque para gravar novamente';
+          overlay.textContent = 'Espectro Pronto';
+          if (processResults) {
+            this.evaluateAndShowFeedback();
+          }
+        }, 900);
+      }
+
+      evaluateAndShowFeedback() {
+        const ex = EXERCISES_DATABASE[this.currentExerciseIndex];
+        
+        // Simulação matemática precisa de score ponderado
+        const scores = [84, 88, 79, 85];
+        const overallScore = Math.floor(78 + Math.random() * 16);
+        const accuracy = Math.floor(overallScore + (Math.random() * 6 - 3));
+        const fluency = Math.floor(overallScore - (Math.random() * 8));
+        const intonation = Math.floor(overallScore + (Math.random() * 4));
+
+        document.getElementById('score-overall-num').textContent = overallScore;
+        document.getElementById('metric-accuracy').textContent = `${Math.min(100, accuracy)}%`;
+        document.getElementById('metric-fluency').textContent = `${Math.min(100, fluency)}%`;
+        document.getElementById('metric-intonation').textContent = `${Math.min(100, intonation)}%`;
+
+        // Calcular circunferência do anel SVG: 2 * PI * 20 = 125.6
+        const circle = document.getElementById('score-ring-circle');
+        const offset = 125.6 - (125.6 * (overallScore / 100));
+        circle.style.strokeDashoffset = offset;
+
+        const headlineEl = document.getElementById('feedback-headline');
+        if (overallScore >= 85) headlineEl.textContent = 'Excellent!';
+        else if (overallScore >= 75) headlineEl.textContent = 'Great Job!';
+        else headlineEl.textContent = 'Keep Practicing!';
+
+        // Gerar breakdown de palavras no feedback
+        const feedbackContainer = document.getElementById('feedback-words-breakdown');
+        feedbackContainer.innerHTML = '';
+
+        ex.words.forEach((w, idx) => {
+          const chip = document.createElement('div');
+          const randomizedScore = Math.max(55, Math.min(99, w.score + Math.floor(Math.random() * 10 - 5)));
+          let scoreClass = 'is-mastered';
+          if (randomizedScore < 75) scoreClass = 'is-critical';
+          else if (randomizedScore < 85) scoreClass = 'is-refining';
+
+          chip.className = `ipa-word-chip ${scoreClass}`;
+          chip.innerHTML = `
+            <span class="word-text">${w.text}</span>
+            <span class="ipa-text">${randomizedScore}%</span>
+          `;
+          chip.onclick = () => this.openPhonemeSheet(w);
+          feedbackContainer.appendChild(chip);
+        });
+
+        // Incrementar barra diária do dashboard
+        const dailyCountEl = document.getElementById('daily-count');
+        let currentCount = parseInt(dailyCountEl.textContent, 10) || 8;
+        if (currentCount < 15) {
+          currentCount += 1;
+          dailyCountEl.textContent = currentCount;
+          document.getElementById('dashboard-progress-fill').style.width = `${Math.round((currentCount / 15) * 100)}%`;
+        }
+
+        this.navigateTo('screen-feedback');
+        this.showToast(`Tentativa avaliada com ${overallScore}% de precisão!`);
+      }
+
+      /**
+       * Canvas de Forma de Onda (Waveform)
+       */
+      initCanvas() {
+        const canvas = document.getElementById('waveform-canvas');
+        if (!canvas) return;
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = (rect.width || 400) * dpr;
+        canvas.height = (rect.height || 72) * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        this.drawRestingWave(canvas, ctx);
+      }
+
+      drawRestingWave(canvas, ctx) {
+        const width = canvas.width / (window.devicePixelRatio || 1);
+        const height = canvas.height / (window.devicePixelRatio || 1);
+        ctx.clearRect(0, 0, width, height);
+
+        const barCount = 42;
+        const barWidth = 3;
+        const gap = (width - (barCount * barWidth)) / (barCount - 1);
+
+        ctx.fillStyle = this.isDarkTheme ? '#2b3b63' : '#c7c4d7';
+        for (let i = 0; i < barCount; i++) {
+          const x = i * (barWidth + gap);
+          const barHeight = 8 + Math.sin(i * 0.4) * 6;
+          const y = (height - barHeight) / 2;
+          ctx.beginPath();
+          ctx.roundRect(x, y, barWidth, barHeight, 3);
+          ctx.fill();
+        }
+      }
+
+      startLiveCanvasLoop() {
+        const canvas = document.getElementById('waveform-canvas');
+        const ctx = canvas.getContext('2d');
+        const bufferLength = this.analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const render = () => {
+          if (!this.isRecording) return;
+          this.analyser.getByteFrequencyData(dataArray);
+
+          const width = canvas.width / (window.devicePixelRatio || 1);
+          const height = canvas.height / (window.devicePixelRatio || 1);
+          ctx.clearRect(0, 0, width, height);
+
+          const barCount = 42;
+          const barWidth = 3;
+          const gap = (width - (barCount * barWidth)) / (barCount - 1);
+
+          for (let i = 0; i < barCount; i++) {
+            const dataIndex = Math.floor((i / barCount) * bufferLength);
+            const val = dataArray[dataIndex] || 0;
+            const barHeight = Math.max(6, (val / 255) * (height - 12));
+            const x = i * (barWidth + gap);
+            const y = (height - barHeight) / 2;
+
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.roundRect(x, y, barWidth, barHeight, 3);
+            ctx.fill();
+          }
+
+          this.animationFrameId = requestAnimationFrame(render);
+        };
+        render();
+      }
+
+      startSyntheticWave() {
+        const canvas = document.getElementById('waveform-canvas');
+        const ctx = canvas.getContext('2d');
+        let step = 0;
+
+        const render = () => {
+          if (!this.isRecording) return;
+          step += 0.2;
+
+          const width = canvas.width / (window.devicePixelRatio || 1);
+          const height = canvas.height / (window.devicePixelRatio || 1);
+          ctx.clearRect(0, 0, width, height);
+
+          const barCount = 42;
+          const barWidth = 3;
+          const gap = (width - (barCount * barWidth)) / (barCount - 1);
+
+          for (let i = 0; i < barCount; i++) {
+            const dynamic = Math.sin(step + i * 0.3) * Math.cos(step * 0.5 + i * 0.1);
+            const barHeight = Math.max(8, Math.abs(dynamic) * (height - 14));
+            const x = i * (barWidth + gap);
+            const y = (height - barHeight) / 2;
+
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.roundRect(x, y, barWidth, barHeight, 3);
+            ctx.fill();
+          }
+
+          this.animationFrameId = requestAnimationFrame(render);
+        };
+        render();
+      }
+
+      triggerCanvasWave(durationMs = 2500) {
+        const canvas = document.getElementById('waveform-canvas');
+        const ctx = canvas.getContext('2d');
+        let start = performance.now();
+
+        const animate = (now) => {
+          const elapsed = now - start;
+          if (elapsed > durationMs) {
+            this.drawRestingWave(canvas, ctx);
+            return;
+          }
+
+          const width = canvas.width / (window.devicePixelRatio || 1);
+          const height = canvas.height / (window.devicePixelRatio || 1);
+          ctx.clearRect(0, 0, width, height);
+
+          const barCount = 42;
+          const barWidth = 3;
+          const gap = (width - (barCount * barWidth)) / (barCount - 1);
+
+          for (let i = 0; i < barCount; i++) {
+            const dynamic = Math.sin(now * 0.015 + i * 0.4);
+            const barHeight = Math.max(8, Math.abs(dynamic) * (height - 18));
+            const x = i * (barWidth + gap);
+            const y = (height - barHeight) / 2;
+
+            ctx.fillStyle = 'var(--color-primary)';
+            ctx.beginPath();
+            ctx.roundRect(x, y, barWidth, barHeight, 3);
+            ctx.fill();
+          }
+
+          requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+      }
+
+      /**
+       * Modal de Articulação Fonética (Bottom Sheet)
+       */
+      openPhonemeSheet(wordObj) {
+        const scrim = document.getElementById('phoneme-sheet-scrim');
+        const ipaSymbol = document.getElementById('sheet-ipa-symbol');
+        const wordTarget = document.getElementById('sheet-word-target');
+        const anatomy = document.getElementById('sheet-phoneme-anatomy');
+        const mistake = document.getElementById('sheet-phoneme-mistake');
+
+        ipaSymbol.textContent = wordObj.ipa;
+        wordTarget.textContent = `Palavra alvo: "${wordObj.text}"`;
+
+        // Recuperar instruções do guia
+        let guide = PHONEME_ANATOMY_GUIDE[wordObj.ipa] || PHONEME_ANATOMY_GUIDE['default'];
+        if (wordObj.text.toLowerCase() === 'calm') guide = PHONEME_ANATOMY_GUIDE['/kɑːm/'];
+        if (wordObj.ipa.includes('θ')) guide = PHONEME_ANATOMY_GUIDE['/θ/'];
+        if (wordObj.ipa.includes('ð')) guide = PHONEME_ANATOMY_GUIDE['/ð/'];
+
+        anatomy.textContent = guide.anatomy;
+        mistake.textContent = guide.mistake;
+
+        this.currentActiveSheetWord = wordObj.text;
+        scrim.classList.add('is-open');
+      }
+
+      speakCurrentSheetWord() {
+        if (this.currentActiveSheetWord) {
+          this.speakWordIsolated(this.currentActiveSheetWord);
+        }
+      }
+
+      closePhonemeSheet(e) {
+        if (e && e.target !== e.currentTarget && !e.target.closest('.btn-action-primary')) return;
+        const scrim = document.getElementById('phoneme-sheet-scrim');
+        scrim.classList.remove('is-open');
+      }
+
+      /**
+       * Simulação de Cenários de Conversação com IA
+       */
+      switchScenario(scenarioKey) {
+        this.activeScenarioKey = scenarioKey;
+        const data = SCENARIOS_DATABASE[scenarioKey];
+        if (!data) return;
+
+        // Atualizar abas
+        ['airport', 'coffee', 'interview'].forEach(k => {
+          const tab = document.getElementById(`scenario-tab-${k}`);
+          if (tab) {
+            if (k === scenarioKey) {
+              tab.style.background = 'var(--color-primary-fixed)';
+              tab.style.color = 'var(--color-on-primary-fixed)';
+            } else {
+              tab.style.background = 'var(--color-surface-container)';
+              tab.style.color = 'var(--color-on-surface)';
+            }
+          }
+        });
+
+        document.getElementById('scenario-active-title').textContent = data.title;
+        document.getElementById('scenario-active-desc').textContent = data.desc;
+
+        // Renderizar mensagens
+        const chatContainer = document.getElementById('chat-messages-container');
+        chatContainer.innerHTML = '';
+        data.initialMessages.forEach(msg => {
+          this.appendChatMessage(msg.sender, msg.name, msg.text, msg.time);
+        });
+
+        // Renderizar sugestões de resposta rápida
+        const suggestionsTray = document.getElementById('chat-suggestions-tray');
+        suggestionsTray.innerHTML = '';
+        data.suggestions.forEach(s => {
+          const pill = document.createElement('button');
+          pill.className = 'quick-reply-pill';
+          pill.textContent = s;
+          pill.onclick = () => {
+            document.getElementById('chat-text-input').value = s;
+            this.sendChatMessage();
+          };
+          suggestionsTray.appendChild(pill);
+        });
+      }
+
+      appendChatMessage(sender, name, text, time = 'Agora') {
+        const chatContainer = document.getElementById('chat-messages-container');
+        const row = document.createElement('div');
+        row.className = `chat-bubble-row ${sender === 'ai' ? 'is-ai' : 'is-user'}`;
+
+        row.innerHTML = `
+          <div class="chat-sender-header">
+            <span>${name}</span>
+            <span>•</span>
+            <span>${time}</span>
+          </div>
+          <div class="chat-bubble">
+            ${text}
+            <div>
+              <button class="chat-audio-btn" onclick="app.speakText('${text.replace(/'/g, "\\'")}', 1.0)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                Ouvir Áudio
+              </button>
+            </div>
+          </div>
+        `;
+
+        chatContainer.appendChild(row);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
+      sendChatMessage() {
+        const input = document.getElementById('chat-text-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        this.appendChatMessage('user', 'Você', text);
+
+        // Feedback de pronúncia instantâneo e resposta da IA
+        const scenario = SCENARIOS_DATABASE[this.activeScenarioKey];
+        setTimeout(() => {
+          let reply = scenario.responses.default;
+          const lower = text.toLowerCase();
+          for (let key in scenario.responses) {
+            if (lower.includes(key)) {
+              reply = scenario.responses[key];
+              break;
+            }
+          }
+          this.appendChatMessage('ai', scenario.initialMessages[0].name, reply);
+          this.speakText(reply, 1.0);
+        }, 1100);
+      }
+
+      recordChatVoice() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+          this.showToast('Microfone não suportado no navegador. Digite no campo de texto.');
+          return;
+        }
+
+        const micBtn = document.getElementById('btn-chat-mic');
+        micBtn.style.background = 'var(--color-error)';
+        this.showToast('Fale sua resposta agora...');
+
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'en-US';
+        recognition.onresult = (e) => {
+          const spoken = e.results[0][0].transcript;
+          document.getElementById('chat-text-input').value = spoken;
+          this.sendChatMessage();
+        };
+        recognition.onend = () => {
+          micBtn.style.background = 'var(--color-primary)';
+        };
+        recognition.start();
+      }
+
+      /**
+       * Frase Personalizada
+       */
+      renderCustomPhrasesList() {
+        const listEl = document.getElementById('recent-custom-phrases-list');
+        listEl.innerHTML = '';
+
+        this.recentCustomPhrases.forEach(phrase => {
+          const item = document.createElement('div');
+          item.style.cssText = 'padding: 10px 12px; background: var(--color-surface-container-low); border-radius: var(--radius-sm); font-size: 13px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;';
+          item.innerHTML = `
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">${phrase}</span>
+            <span class="pill-btn" style="color: var(--color-primary); font-size: 10px;">Treinar</span>
+          `;
+          item.onclick = () => {
+            document.getElementById('custom-phrase-input').value = phrase;
+            this.startCustomTraining();
+          };
+          listEl.appendChild(item);
+        });
+      }
+
+      fillRandomCustomPhrase() {
+        const suggestions = [
+          'Could we schedule a quick sync tomorrow morning?',
+          'Let me double-check the details and get back to you shortly.',
+          'I truly appreciate your feedback and continuous support.',
+          'How comfortable are you with presenting data driven insights?'
+        ];
+        const random = suggestions[Math.floor(Math.random() * suggestions.length)];
+        document.getElementById('custom-phrase-input').value = random;
+      }
+
+      startCustomTraining() {
+        const input = document.getElementById('custom-phrase-input');
+        const text = input.value.trim();
+        if (!text) {
+          this.showToast('Por favor, digite uma frase em inglês.');
+          return;
+        }
+
+        // Criar exercício dinâmico
+        const words = text.split(/\s+/).map(w => {
+          const clean = w.replace(/[^a-zA-Z]/g, '');
+          return {
+            text: w,
+            ipa: `/${clean.toLowerCase()}/`,
+            tip: `Articule as vogais e consoantes de "${clean}" claramente.`,
+            score: Math.floor(75 + Math.random() * 20)
+          };
+        });
+
+        const customEx = {
+          id: `custom-${Date.now()}`,
+          sentence: text,
+          ipa: `/${words.map(w => w.text.toLowerCase()).join(' ')}/`,
+          difficulty: 'Customizado',
+          category: 'Frase Personalizada',
+          tip: 'Conecte as palavras com fluência e atente para a tonicidade de cada termo.',
+          words: words
+        };
+
+        EXERCISES_DATABASE.unshift(customEx);
+        this.loadExercise(0);
+        this.navigateTo('screen-guided');
+        this.showToast('Frase personalizada calibrada! Inicie sua gravação.');
+      }
+
+      showToast(msg) {
+        const toast = document.getElementById('toast-notification');
+        const text = document.getElementById('toast-text');
+        text.textContent = msg;
+        toast.classList.add('is-visible');
+        clearTimeout(this.toastTimer);
+        this.toastTimer = setTimeout(() => {
+          toast.classList.remove('is-visible');
+        }, 2800);
+      }
+    }
+
+    // Inicialização da aplicação após carregamento da janela
+    window.addEventListener('DOMContentLoaded', () => {
+      window.app = new VocalisApp();
+    });
+  </script>
+</body>
+</html>
