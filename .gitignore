@@ -59,6 +59,7 @@ backend/.venv/
 
 # Temporary test captures
 app_*_live.png
+*.apk
 
 
 # Agents 

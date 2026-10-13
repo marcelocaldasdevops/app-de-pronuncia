@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ConversationMessage } from '../../types';
 import { speechService } from '../../services/speechService';
 import { audioService } from '../../services/audioService';
-import { huggingFaceSpeech } from '../../services/huggingFaceSpeech';
+import { pronunciationBackendService } from '../../services/pronunciationBackendService';
 import { coffeeNycScenario, matchDialogueResponse } from '../../data/dialogues';
 
 interface FreeSpeakingScreenProps {
@@ -26,9 +26,13 @@ export const FreeSpeakingScreen: React.FC<FreeSpeakingScreenProps> = ({ onBackTo
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [isBackendAvailable, setIsBackendAvailable] = useState<boolean>(true);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const isHfConfigured = huggingFaceSpeech.isConfigured();
+
+  useEffect(() => {
+    pronunciationBackendService.isBackendAvailable().then(setIsBackendAvailable);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -57,13 +61,16 @@ export const FreeSpeakingScreen: React.FC<FreeSpeakingScreenProps> = ({ onBackTo
 
       let finalText = '';
 
-      // Prefer HF STT if configured; otherwise use Web Speech interimText
-      if (isHfConfigured && audioBlob && audioBlob.size > 0) {
+      // Prefer Faster-Whisper backend STT; otherwise fallback to Web Speech interimText
+      if (audioBlob && audioBlob.size > 0) {
         try {
-          const hfText = await huggingFaceSpeech.recognizeSpeech(audioBlob);
-          finalText = hfText.trim();
+          const text = await pronunciationBackendService.recognizeSpeech(audioBlob);
+          finalText = text.trim();
+          if (!finalText && interimText.trim()) {
+            finalText = interimText.trim();
+          }
         } catch (err: any) {
-          console.warn('HF STT falhou, tentando transcript Web Speech:', err);
+          console.warn('Backend Faster-Whisper STT falhou, usando transcrição Web Speech:', err);
           finalText = interimText.trim();
         }
       } else {
@@ -182,18 +189,18 @@ export const FreeSpeakingScreen: React.FC<FreeSpeakingScreenProps> = ({ onBackTo
 
         {/* STT Engine Badge */}
         <div className="flex items-center">
-          {isHfConfigured ? (
+          {isBackendAvailable ? (
             <span
               className="text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1"
-              title="Reconhecimento via Hugging Face Wav2Vec2 STT"
+              title="Reconhecimento via Faster-Whisper STT (Backend próprio)"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              HF STT
+              Whisper STT
             </span>
           ) : (
             <span
               className="text-[10px] font-mono bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1"
-              title="Hugging Face não configurado no .env. Usando Web Speech API do navegador."
+              title="Backend indisponível. Usando Web Speech API do navegador."
             >
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
               Web Speech

@@ -1,8 +1,6 @@
 /**
- * Adapter that converts Hugging Face transcription + scoring results
+ * Adapter that converts Whisper transcription + Levenshtein scoring results
  * into the UI-compatible PronunciationResult contract.
- *
- * Replaces pronunciationAdapter.ts (Azure-specific) for the HF pipeline.
  */
 
 import { PronunciationResult, WordEvaluation, WordStatus } from '../types';
@@ -11,7 +9,6 @@ import { PronunciationScoreResult, WordComparisonResult } from './pronunciationS
 
 /**
  * Centralized score thresholds for pronunciation classification.
- * Same values as the Azure adapter for consistency.
  */
 export const SCORE_THRESHOLDS = {
   MASTERED: 85,
@@ -59,7 +56,7 @@ function generateArticulationTip(words: WordEvaluation[]): string {
 }
 
 /**
- * Converts HF pronunciation scoring result into the UI-compatible PronunciationResult.
+ * Converts pronunciation scoring result into the UI-compatible PronunciationResult.
  *
  * @param scoreResult The scoring result from pronunciationScorerHF
  * @param targetSentence The expected reference sentence
@@ -103,6 +100,6 @@ export function toPronunciationResult(
     words: wordEvaluations,
     feedbackSummary: generateFeedbackSummary(scoreResult.overallScore, wordEvaluations),
     articulationTip: generateArticulationTip(wordEvaluations),
-    provider: 'huggingface',
+    provider: 'whisper',
   };
 }
