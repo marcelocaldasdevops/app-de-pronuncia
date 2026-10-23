@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pronunciation_result.dart';
@@ -16,7 +17,9 @@ class PronunciationService {
               'BACKEND_URL',
               defaultValue: 'https://app-de-pronuncia.onrender.com',
             ) {
-    _loadBackendUrl();
+    if (backendUrl == null) {
+      _loadBackendUrl();
+    }
   }
 
   Future<void> _loadBackendUrl() async {
@@ -25,6 +28,17 @@ class PronunciationService {
       final saved = prefs.getString(_kBackendUrlKey);
       if (saved != null && saved.trim().isNotEmpty) {
         backendUrl = saved.trim();
+        return;
+      }
+      if (kIsWeb) {
+        try {
+          final res = await http.get(Uri.parse('http://localhost:8000/api/health')).timeout(
+            const Duration(milliseconds: 600),
+          );
+          if (res.statusCode == 200) {
+            backendUrl = 'http://localhost:8000';
+          }
+        } catch (_) {}
       }
     } catch (_) {}
   }
@@ -40,16 +54,31 @@ class PronunciationService {
   Future<bool> checkHealth() async {
     try {
       final res = await http.get(Uri.parse('$backendUrl/api/health')).timeout(
-        const Duration(seconds: 6),
+        const Duration(seconds: 4),
       );
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         return data['status'] == 'ok';
       }
-      return false;
-    } catch (_) {
-      return false;
+    } catch (_) {}
+
+    // Fallback de autodescoberta para ambiente web local quando no default de nuvem
+    if (backendUrl == 'https://app-de-pronuncia.onrender.com' && kIsWeb) {
+      try {
+        final localRes = await http.get(Uri.parse('http://localhost:8000/api/health')).timeout(
+          const Duration(milliseconds: 800),
+        );
+        if (localRes.statusCode == 200) {
+          final data = jsonDecode(localRes.body);
+          if (data['status'] == 'ok') {
+            backendUrl = 'http://localhost:8000';
+            return true;
+          }
+        }
+      } catch (_) {}
     }
+
+    return false;
   }
 
   Future<Map<String, dynamic>?> getPhoneticsG2P(String text) async {

@@ -196,8 +196,8 @@ class _FeedbackModalState extends State<FeedbackModal> {
             ),
             const SizedBox(height: 14),
 
-            // Banner informativo de Fallback Local (quando o backend esteve offline)
-            if (result.isFallback)
+            // Banner informativo de Fallback ou Modo de Compatibilidade
+            if (result.isFallback || result.feedbackSummary.contains('modo de compatibilidade'))
               Container(
                 margin: const EdgeInsets.only(bottom: 14),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -212,7 +212,9 @@ class _FeedbackModalState extends State<FeedbackModal> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Modo Offline: Avaliação estimada localmente por texto.',
+                        result.isFallback
+                            ? 'Modo Offline: Avaliação estimada localmente por texto.'
+                            : 'Modo de Compatibilidade: Servidor em fallback sem inferência acústica completa.',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -232,9 +234,9 @@ class _FeedbackModalState extends State<FeedbackModal> {
                   height: 68,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: result.overallScore >= 80
+                    color: result.overallScore >= 85
                         ? _getStatusBg(WordStatus.mastered, phoneticTheme)
-                        : (result.overallScore >= 60
+                        : (result.overallScore >= 65
                             ? _getStatusBg(WordStatus.near, phoneticTheme)
                             : _getStatusBg(WordStatus.needsWork, phoneticTheme)),
                   ),
@@ -244,9 +246,9 @@ class _FeedbackModalState extends State<FeedbackModal> {
                       style: GoogleFonts.jetBrainsMono(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: result.overallScore >= 80
+                        color: result.overallScore >= 85
                             ? _getStatusColor(WordStatus.mastered, phoneticTheme)
-                            : (result.overallScore >= 60
+                            : (result.overallScore >= 65
                                 ? _getStatusColor(WordStatus.near, phoneticTheme)
                                 : _getStatusColor(WordStatus.needsWork, phoneticTheme)),
                       ),
@@ -259,11 +261,13 @@ class _FeedbackModalState extends State<FeedbackModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        result.overallScore >= 80
-                            ? 'Excelente Pronúncia!'
-                            : (result.overallScore >= 60
-                                ? 'Bom Progresso!'
-                                : 'Continue Praticando!'),
+                        (result.isFallback || result.feedbackSummary.contains('modo de compatibilidade'))
+                            ? (result.overallScore >= 75 ? 'Avaliação em Compatibilidade' : 'Pronúncia Divergente')
+                            : (result.overallScore >= 85
+                                ? 'Excelente Pronúncia!'
+                                : (result.overallScore >= 70
+                                    ? 'Boa Pronúncia!'
+                                    : (result.overallScore >= 50 ? 'Em Evolução!' : 'Continue Praticando!'))),
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
