@@ -63,8 +63,15 @@ async def text_to_speech(
     if not text or not text.strip():
         raise HTTPException(status_code=400, detail="Texto não pode ser vazio.")
 
+    # Sanitização do parâmetro rate para evitar erros decorrentes de decodificação de '+' em URL
+    clean_rate = rate.strip()
+    if not clean_rate.startswith("+") and not clean_rate.startswith("-"):
+        clean_rate = f"+{clean_rate}"
+    if not clean_rate.endswith("%"):
+        clean_rate = f"{clean_rate}%"
+
     try:
-        communicate = edge_tts.Communicate(text.strip(), voice, rate=rate)
+        communicate = edge_tts.Communicate(text.strip(), voice, rate=clean_rate)
         mp3_buffer = bytearray()
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":

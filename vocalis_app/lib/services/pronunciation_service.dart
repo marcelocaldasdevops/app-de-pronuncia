@@ -111,20 +111,38 @@ class PronunciationService {
       return _ttsMemoryCache[cacheKey];
     }
 
+    final encodedText = Uri.encodeComponent(text);
+    final encodedRate = Uri.encodeComponent(rateStr);
+
     try {
       final uri = Uri.parse(
-        '$backendUrl/api/tts?text=${Uri.encodeComponent(text)}&voice=$voice&rate=$rateStr',
+        '$backendUrl/api/tts?text=$encodedText&voice=$voice&rate=$encodedRate',
       );
-      final res = await http.get(uri).timeout(const Duration(seconds: 5));
+      final res = await http.get(uri).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200 && res.bodyBytes.isNotEmpty) {
         final bytes = res.bodyBytes;
         _ttsMemoryCache[cacheKey] = bytes;
         return bytes;
       }
-      return null;
-    } catch (_) {
-      return null;
+    } catch (_) {}
+
+    // Fallback de autodescoberta para localhost em ambiente Web caso a nuvem esteja lenta/adormecida
+    if (backendUrl != 'http://localhost:8000' && kIsWeb) {
+      try {
+        final localUri = Uri.parse(
+          'http://localhost:8000/api/tts?text=$encodedText&voice=$voice&rate=$encodedRate',
+        );
+        final localRes = await http.get(localUri).timeout(const Duration(seconds: 4));
+        if (localRes.statusCode == 200 && localRes.bodyBytes.isNotEmpty) {
+          backendUrl = 'http://localhost:8000';
+          final bytes = localRes.bodyBytes;
+          _ttsMemoryCache[cacheKey] = bytes;
+          return bytes;
+        }
+      } catch (_) {}
     }
+
+    return null;
   }
 
   Future<PronunciationResult> assessAudio({

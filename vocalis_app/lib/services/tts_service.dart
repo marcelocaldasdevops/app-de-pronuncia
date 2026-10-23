@@ -86,36 +86,60 @@ class TtsService {
     });
   }
 
-  Future<void> _configureWebVoice() async {
+  Future<void> _configureWebVoice({String? targetLang}) async {
     try {
-      final rawVoices = await _flutterTts.getVoices;
+      final desired = (targetLang ?? _currentLanguage).toLowerCase();
+      final targetLangPrefix = desired.split('-').first;
+
+      dynamic rawVoices = await _flutterTts.getVoices;
+      // No navegador, getVoices é assíncrono e frequentemente vazio na carga inicial
+      if (rawVoices is! List || rawVoices.isEmpty) {
+        await Future.delayed(const Duration(milliseconds: 250));
+        rawVoices = await _flutterTts.getVoices;
+      }
+
       if (rawVoices is List && rawVoices.isNotEmpty) {
         final voices = rawVoices.cast<Map>();
-        final targetLangPrefix = _currentLanguage.split('-').first.toLowerCase();
 
         final preferred = voices.firstWhere(
           (v) {
             final name = (v['name'] ?? '').toString();
-            final lang = (v['locale'] ?? '').toString().toLowerCase();
-            return lang.startsWith(targetLangPrefix) &&
-                (name.contains('Natural') ||
-                    name.contains('Google') ||
-                    name.contains('Samantha') ||
-                    name.contains('Daniel') ||
-                    name.contains('Jenny') ||
-                    name.contains('Guy'));
+            final locale = (v['locale'] ?? '').toString().toLowerCase();
+            final isTargetPrefix = locale.startsWith(targetLangPrefix);
+            final isEnglishName = name.toLowerCase().contains('english') ||
+                name.toLowerCase().contains('united states') ||
+                name.toLowerCase().contains('us') ||
+                name.toLowerCase().contains('uk');
+
+            if (!isTargetPrefix && !isEnglishName) return false;
+
+            return name.contains('Natural') ||
+                name.contains('Google') ||
+                name.contains('Samantha') ||
+                name.contains('Daniel') ||
+                name.contains('Jenny') ||
+                name.contains('Guy') ||
+                name.contains('Alex') ||
+                name.contains('Victoria') ||
+                name.contains('Fred');
           },
           orElse: () => voices.firstWhere(
-            (v) => (v['locale'] ?? '').toString().toLowerCase().startsWith(targetLangPrefix),
+            (v) {
+              final name = (v['name'] ?? '').toString();
+              final locale = (v['locale'] ?? '').toString().toLowerCase();
+              return locale.startsWith(targetLangPrefix) || name.toLowerCase().contains('english');
+            },
             orElse: () => const {},
           ),
         );
 
         if (preferred.isNotEmpty && preferred['name'] != null && preferred['locale'] != null) {
+          final voiceLocale = preferred['locale'].toString();
           await _flutterTts.setVoice({
             'name': preferred['name'].toString(),
-            'locale': preferred['locale'].toString(),
+            'locale': voiceLocale,
           });
+          await _flutterTts.setLanguage(voiceLocale);
         }
       }
     } catch (_) {}
@@ -130,7 +154,7 @@ class TtsService {
     try {
       await _flutterTts.setLanguage(lang);
       if (kIsWeb) {
-        await _configureWebVoice();
+        await _configureWebVoice(targetLang: lang);
       }
     } catch (_) {}
   }
@@ -138,8 +162,11 @@ class TtsService {
   Future<void> speak(String text, {bool slow = false, String? lang}) async {
     try {
       await stop();
-      if (lang != null && lang != _currentLanguage) {
-        await setLanguage(lang);
+      final desiredLang = lang ?? _currentLanguage;
+      if (desiredLang != _currentLanguage) {
+        await setLanguage(desiredLang);
+      } else if (kIsWeb) {
+        await _configureWebVoice(targetLang: desiredLang);
       }
       final targetRate = slow ? _slowRate : _normalRate;
       await _flutterTts.setSpeechRate(targetRate);
