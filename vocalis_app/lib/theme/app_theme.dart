@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'phonetic_theme_extension.dart';
 
 class AppTheme {
   static const Color primary = Color(0xFF4648D4);
@@ -23,6 +24,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      extensions: [PhoneticThemeExtension.light()],
       colorScheme: ColorScheme.fromSeed(
         seedColor: primary,
         primary: primary,

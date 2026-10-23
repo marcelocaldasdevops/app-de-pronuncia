@@ -7,6 +7,7 @@ import '../data/ipa_dictionary.dart';
 
 class PronunciationService {
   static const _kBackendUrlKey = 'vocalis_backend_url_v1';
+  static final Map<String, List<int>> _ttsMemoryCache = {};
   String backendUrl;
 
   PronunciationService({String? backendUrl})
@@ -73,15 +74,23 @@ class PronunciationService {
     String accent = 'US',
     double rate = 1.0,
   }) async {
+    final voice = accent == 'UK' ? 'en-GB-SoniaNeural' : 'en-US-JennyNeural';
+    final rateStr = rate < 0.9 ? '-20%' : '+0%';
+    final cacheKey = '$voice:$rateStr:$text';
+
+    if (_ttsMemoryCache.containsKey(cacheKey)) {
+      return _ttsMemoryCache[cacheKey];
+    }
+
     try {
-      final voice = accent == 'UK' ? 'en-GB-SoniaNeural' : 'en-US-JennyNeural';
-      final rateStr = rate < 0.9 ? '-20%' : '+0%';
       final uri = Uri.parse(
         '$backendUrl/api/tts?text=${Uri.encodeComponent(text)}&voice=$voice&rate=$rateStr',
       );
       final res = await http.get(uri).timeout(const Duration(seconds: 5));
       if (res.statusCode == 200 && res.bodyBytes.isNotEmpty) {
-        return res.bodyBytes;
+        final bytes = res.bodyBytes;
+        _ttsMemoryCache[cacheKey] = bytes;
+        return bytes;
       }
       return null;
     } catch (_) {
@@ -213,6 +222,7 @@ class PronunciationService {
       feedbackSummary: summary,
       articulationTip: 'Concentre-se nas palavras marcadas em âmbar ou vermelho para aprimorar sua articulação.',
       provider: 'client-offline',
+      isFallback: true,
     );
   }
 

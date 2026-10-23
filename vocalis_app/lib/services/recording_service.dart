@@ -111,4 +111,39 @@ class RecordingService {
       await _recorder.dispose();
     } catch (_) {}
   }
+
+  /// Validação pré-upload do áudio para evitar requisições com áudios mudos ou truncados
+  static String? validateRecording(RecordingResult? recording) {
+    if (recording == null || recording.bytes.isEmpty) {
+      return 'Nenhum áudio foi capturado. Verifique as permissões de microfone.';
+    }
+
+    if (recording.duration < const Duration(milliseconds: 450)) {
+      return 'Áudio muito curto. Fale a frase com naturalidade antes de parar.';
+    }
+
+    // Validação de sinal PCM em arquivos WAV
+    if (recording.bytes.length > 44) {
+      final header = String.fromCharCodes(recording.bytes.take(4));
+      if (header == 'RIFF') {
+        int maxSample = 0;
+        final data = recording.bytes;
+        // Percorre amostras de 16-bit a partir do offset 44 (com passo para performance)
+        for (int i = 44; i < data.length - 1; i += 4) {
+          int sample = data[i] | (data[i + 1] << 8);
+          if (sample >= 0x8000) sample -= 0x10000;
+          final absVal = sample.abs();
+          if (absVal > maxSample) {
+            maxSample = absVal;
+            if (maxSample > 800) break; // Sinal claro encontrado
+          }
+        }
+        if (maxSample < 180) {
+          return 'Volume de gravação muito baixo ou sem voz detectada. Fale mais próximo ao microfone.';
+        }
+      }
+    }
+
+    return null;
+  }
 }

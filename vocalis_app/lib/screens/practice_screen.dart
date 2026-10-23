@@ -312,21 +312,32 @@ class _PracticeScreenState extends State<PracticeScreen> {
         _isRecording = false;
         _recordingTimer?.cancel();
       });
-      final liveTranscript = await _liveTranscript.stop();
-      final recording = await _recordingService.stop();
 
-      if (recording == null) {
+      final recording = await _recordingService.stop();
+      final validationError = RecordingService.validateRecording(recording);
+
+      if (validationError != null) {
         setState(() {
-          _recordingError =
-              'Nenhum áudio foi capturado. Verifique o microfone e tente de novo.';
+          _recordingError = validationError;
         });
         return;
       }
 
       setState(() => _lastRecording = recording);
-      await _runAssessment(recording: recording, liveTranscript: liveTranscript);
+      await _runAssessment(recording: recording);
     } else {
+      if (_isPlaying) {
+        _tts.stop();
+        _isPlaying = false;
+      }
+      if (_isPlayingRecording) {
+        _audioPlayer.stop();
+        _isPlayingRecording = false;
+      }
+
       setState(() {
+        _activeCharStart = null;
+        _activeCharEnd = null;
         _recordingError = null;
         _lastRecording = null;
       });
@@ -347,8 +358,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
       _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() => _recordingSeconds++);
       });
-
-      _liveTranscript.start();
     }
   }
 
@@ -482,6 +491,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           context,
           result: result,
           tts: _tts,
+          recordedAudioBytes: recording?.bytes,
           onRetry: () {
             _spokenInputController.clear();
           },
@@ -1388,10 +1398,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     // Recording status
                     if (_isRecording) ...[
                       const SizedBox(height: 12),
-                      WaveformVisualizer(
-                        isRecording: _isRecording,
-                        activeColor: AppTheme.danger,
-                        height: 38,
+                      RepaintBoundary(
+                        child: WaveformVisualizer(
+                          isRecording: _isRecording,
+                          activeColor: AppTheme.danger,
+                          height: 38,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Row(
